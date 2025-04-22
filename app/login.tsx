@@ -1,24 +1,34 @@
-// LoginScreen.tsx
+import { Redirect, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Stack, Text, Input, Button, Label, YStack, XStack, Separator, Theme } from 'tamagui';
+import { authUser } from '~/utils/auth';
 
-export default function LoginScreen() {
+export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const router = useRouter();
 
   const handleLogin = async () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      alert('Logged in!');
-    }, 1200);
+    setError(''); // clear any existing error
+    try {
+      const res = await authUser({ email, password });
+
+      console.log(res);
+      if (!res.ok) {
+      }
+      const { accessToken, refreshToken } = await res;
+      // TODO save access token i secure storage
+      router.replace('/');
+    } catch (e: any) {
+      setError(e.message || 'Something went wrong');
+    }
   };
 
   return (
     <Theme name="light">
-      <YStack f={1} jc="center" ai="center" bg="$background" p="$6" minHeight={400} space="$4">
-        <Stack bg="$color2" p="$6" br="$4" elevation={4} width={350} maxWidth="90vw" space="$4">
+      <YStack f={1} jc="center" ai="center" bg="$background" p="$6" minHeight={400}>
+        <Stack bg="$color2" p="$6" br="$4" elevation={4} width={350} maxWidth="90vw">
           <Text fontSize={28} fontWeight="700" ta="center" mb="$2">
             Welcome Back
           </Text>
@@ -49,26 +59,14 @@ export default function LoginScreen() {
             />
           </YStack>
 
-          <XStack jc="space-between" ai="center" mt="$2">
-            <XStack ai="center" space="$2">
-              <Input type="checkbox" id="remember" size="$2" />
-              <Label htmlFor="remember" size="$2">
-                Remember me
-              </Label>
-            </XStack>
-            <Text
-              color="$color9"
-              fontSize={13}
-              cursor="pointer"
-              onPress={() => alert('Forgot password?')}>
-              Forgot password?
-            </Text>
-          </XStack>
-
-          <Button mt="$4" size="$5" onPress={handleLogin} disabled={loading} themeInverse>
-            {loading ? 'Signing in...' : 'Sign In'}
+          <Button mt="$4" size="$5" onPress={() => handleLogin()} themeInverse>
+            Sign in
           </Button>
-
+          {error ? (
+            <Text color="red" mt="$2">
+              {error}
+            </Text>
+          ) : null}
           <Separator my="$3" />
 
           <XStack jc="center" ai="center" space="$2">
