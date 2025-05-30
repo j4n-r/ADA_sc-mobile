@@ -1,7 +1,8 @@
-import { Redirect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Stack, Text, Input, Button, Label, YStack, XStack, Separator, Theme } from 'tamagui';
+import { Text, Input, Stack, Button, Label, YStack, XStack, Separator, Theme } from 'tamagui';
 import { authUser } from '~/utils/auth';
+import * as SecureStore from 'expo-secure-store'; // Import SecureStore
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,16 +11,22 @@ export default function Login() {
   const router = useRouter();
 
   const handleLogin = async () => {
-    setError(''); // clear any existing error
+    setError('');
     try {
-      const res = await authUser({ email, password });
+      const { access_token, refresh_token } = await authUser({
+        email,
+        password,
+      });
 
-      console.log(res);
-      if (!res.ok) {
+      console.log(access_token, refresh_token);
+      try {
+        await SecureStore.setItemAsync('accessToken', JSON.stringify(access_token));
+        await SecureStore.setItemAsync('refreshToken', JSON.stringify(refresh_token));
+      } catch (e) {
+        console.error(e);
       }
-      const { accessToken, refreshToken } = await res;
-      // TODO save access token i secure storage
-      router.replace('/');
+
+      router.replace('/'); // Or to a specific authenticated route
     } catch (e: any) {
       setError(e.message || 'Something went wrong');
     }

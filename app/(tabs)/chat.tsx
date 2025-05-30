@@ -1,9 +1,11 @@
 // ChatScreen.tsx
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { GiftedChat, IMessage, User } from 'react-native-gifted-chat';
+import { config } from '~/app.config';
 
 // Change this to your computer's LAN IP address!
-const WS_URL = 'ws://192.168.0.240:8080'; // <-- CHANGE THIS
+
+const WS_URL = `${config.WS_BASE_URL}`;
 
 const initMessages = [
   {
