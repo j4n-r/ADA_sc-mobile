@@ -1,0 +1,1385 @@
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: flake.lock
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+<additional_info>
+
+</additional_info>
+
+</file_summary>
+
+<directory_structure>
+app/
+  (tabs)/
+    _layout.tsx
+    chat.tsx
+    index.tsx
+    profile.tsx
+  _layout.tsx
+  +html.tsx
+  +not-found.tsx
+  login.tsx
+  modal.tsx
+components/
+  TabBarIcon.tsx
+utils/
+  apiClient.ts
+  auth.ts
+  supabase.ts
+.envrc
+.gitignore
+app.config.ts
+app.json
+babel.config.js
+cesconfig.json
+flake.nix
+global.css
+metro.config.js
+nativewind-env.d.ts
+package.json
+prettier.config.js
+README.md
+tailwind.config.js
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="app/(tabs)/profile.tsx">
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Stack, router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getUserdata, UserData } from '~/utils/auth';
+
+export default function Home() {
+  const [userData, setUserData] = useState<UserData>({ userId: null, username: null });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getUserdata();
+        setUserData(data);
+      } catch (error) {
+        console.error('Failed to fetch user data for Home screen:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const handleClearTokensAndLogout = async () => {
+    console.log('Clearing tokens...');
+    try {
+      await SecureStore.deleteItemAsync('accessToken');
+      await SecureStore.deleteItemAsync('refreshToken');
+      await AsyncStorage.removeItem('userId');
+      await AsyncStorage.removeItem('username');
+      console.log('Tokens and user data cleared.');
+      setUserData({ userId: null, username: null });
+      router.replace('/login');
+    } catch (error) {
+      console.error('Error clearing tokens:', error);
+    }
+  };
+
+  return (
+    <>
+      <Stack.Screen
+        options={{
+          title: 'Dashboard',
+          headerStyle: { backgroundColor: '#f8fafc' },
+          headerTintColor: '#1f2937',
+        }}
+      />
+      <View className="flex-1 bg-gray-50 p-4 items-center">
+        {isLoading ? (
+          <View className="flex-1 justify-center items-center space-y-3">
+            <ActivityIndicator size="large" color="#3b82f6" />
+            <Text className="text-lg text-gray-600">Loading profile...</Text>
+          </View>
+        ) : (
+          <View className="w-full max-w-md bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            {/* Card Header */}
+            <View className="p-6 border-b border-gray-100">
+              <View className="flex-row items-center space-x-3">
+                <View className="w-8 h-8 bg-blue-100 rounded-full items-center justify-center">
+                  <Text className="text-blue-600 font-semibold">👤</Text>
+                </View>
+                <Text className="text-2xl font-bold text-gray-900">User Profile</Text>
+              </View>
+            </View>
+
+            {/* Card Content */}
+            <View className="p-6 space-y-4">
+              <View className="flex-row justify-between items-center">
+                <Text className="text-base text-gray-600">User ID:</Text>
+                <Text className="text-base font-semibold text-gray-900">
+                  {userData.userId || 'N/A'}
+                </Text>
+              </View>
+              <View className="flex-row justify-between items-center">
+                <Text className="text-base text-gray-600">Username:</Text>
+                <Text className="text-base font-semibold text-gray-900">
+                  {userData.username || 'N/A'}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {!isLoading && (
+          <TouchableOpacity
+            className="w-full max-w-md bg-red-600 py-4 px-6 rounded-lg mt-4 flex-row items-center justify-center space-x-2 active:bg-red-700"
+            onPress={handleClearTokensAndLogout}>
+            <Text className="text-white font-semibold text-lg">🚪</Text>
+            <Text className="text-white font-semibold text-lg">Clear Tokens & Logout</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </>
+  );
+}
+</file>
+
+<file path="global.css">
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+</file>
+
+<file path="nativewind-env.d.ts">
+/// <reference types="nativewind/types" />
+</file>
+
+<file path="tailwind.config.js">
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+    content: ['./**/*.{tsx}', './components/**/*.{js,jsx,ts,tsx}'],
+    presets: [require('nativewind/preset')],
+    theme: {
+        extend: {},
+    },
+    plugins: [],
+};
+</file>
+
+<file path="app/+html.tsx">
+import { ScrollViewStyleReset } from 'expo-router/html';
+
+// This file is web-only and used to configure the root HTML for every
+// web page during static rendering.
+// The contents of this function only run in Node.js environments and
+// do not have access to the DOM or browser APIs.
+export default function Root({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="utf-8" />
+        <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+
+        {/*
+          This viewport disables scaling which makes the mobile website act more like a native app.
+          However this does reduce built-in accessibility. If you want to enable scaling, use this instead:
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        */}
+        <meta
+          name="viewport"
+          content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1.00001,viewport-fit=cover"
+        />
+        {/*
+          Disable body scrolling on web. This makes ScrollView components work closer to how they do on native.
+          However, body scrolling is often nice to have for mobile web. If you want to enable it, remove this line.
+        */}
+        <ScrollViewStyleReset />
+
+        {/* Using raw CSS styles as an escape-hatch to ensure the background color never flickers in dark-mode. */}
+        <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
+        {/* Add any additional <head> elements that you want globally available on web... */}
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+
+const responsiveBackground = `
+body {
+  background-color: #fff;
+}
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #000;
+  }
+}`;
+</file>
+
+<file path="app/+not-found.tsx">
+import { Link, Stack } from 'expo-router';
+import { View, Text } from 'react-native';
+
+export default function NotFoundScreen() {
+  return (
+    <View className="flex-1 bg-gray-50">
+      <Stack.Screen options={{ title: 'Oops!' }} />
+      <View className="flex-1 justify-center items-center px-6">
+        <View className="items-center space-y-4">
+          <Text className="text-4xl font-bold text-gray-900 text-center">
+            This screen doesn't exist.
+          </Text>
+          <Link href="/" className="mt-4">
+            <Text className="text-lg text-blue-600 underline font-medium">Go to home screen!</Text>
+          </Link>
+        </View>
+      </View>
+    </View>
+  );
+}
+</file>
+
+<file path="app/modal.tsx">
+import { StatusBar } from 'expo-status-bar';
+import { Platform } from 'react-native';
+
+import { ScreenContent } from '~/components/ScreenContent';
+
+export default function Modal() {
+  return (
+    <>
+      <ScreenContent path="app/modal.tsx" title="Modal" />
+      <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
+    </>
+  );
+}
+</file>
+
+<file path="utils/apiClient.ts">
+import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import * as SecureStore from 'expo-secure-store';
+import { config } from '../app.config';
+import { router } from 'expo-router';
+
+const apiClient: AxiosInstance = axios.create({
+  baseURL: config.API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Interceptor to add JWT to requests
+apiClient.interceptors.request.use(
+  async (axiosConfig: InternalAxiosRequestConfig) => {
+    const token = await SecureStore.getItemAsync('accessToken');
+    if (token) {
+      axiosConfig.headers.Authorization = `Bearer ${token}`;
+    }
+    return axiosConfig;
+  },
+  (error) => {
+    console.log(error);
+    router.replace('/login'); // Or to a specific authenticated route
+  }
+);
+
+export const checkAuth = async () => {
+  try {
+    const response = await apiClient.get('/');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching protected data:', error);
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      console.log('Unauthorized, consider redirecting to login or refreshing token.');
+      await SecureStore.deleteItemAsync('accessToken');
+      return 401;
+    }
+    throw error;
+  }
+};
+
+// // Example function to post some data
+// export const postSomeData = async (data: any) => {
+//   try {
+//     const response = await apiClient.post('/another-protected-route', data);
+//     return response.data;
+//   } catch (error) {
+//     console.error('Error posting data:', error);
+//     if (axios.isAxiosError(error) && error.response?.status === 401) {
+//       console.log('Unauthorized, consider redirecting to login or refreshing token.');
+//     }
+//     throw error;
+//   }
+// };
+</file>
+
+<file path="utils/supabase.ts">
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: AsyncStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+});
+</file>
+
+<file path=".envrc">
+use flake . --no-pure-eval
+</file>
+
+<file path="babel.config.js">
+module.exports = function (api) {
+    api.cache(true);
+    const plugins = [];
+
+    return {
+        presets: [['babel-preset-expo', { jsxImportSource: 'nativewind' }], 'nativewind/babel'],
+
+        plugins,
+    };
+};
+</file>
+
+<file path="cesconfig.json">
+{
+    "cesVersion": "2.14.3",
+    "projectName": "sc-mobile",
+    "packages": [
+        {
+            "name": "expo-router",
+            "type": "navigation",
+            "options": {
+                "type": "tabs"
+            }
+        },
+        {
+            "name": "supabase",
+            "type": "authentication"
+        }
+    ],
+    "flags": {
+        "noGit": false,
+        "noInstall": false,
+        "overwrite": false,
+        "importAlias": true,
+        "packageManager": "npm",
+        "eas": false,
+        "publish": false
+    },
+    "packageManager": {
+        "type": "npm",
+        "version": "10.8.2"
+    },
+    "os": {
+        "type": "Linux",
+        "platform": "linux",
+        "arch": "x64",
+        "kernelVersion": "6.6.83"
+    }
+}
+</file>
+
+<file path="flake.nix">
+{
+  inputs = {
+    nixpkgs.url = "github:cachix/devenv-nixpkgs/rolling";
+    devenv.url = "github:cachix/devenv";
+  };
+
+  nixConfig = {
+    extra-trusted-public-keys = "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=";
+    extra-substituters = "https://devenv.cachix.org";
+  };
+
+  outputs =
+    {
+      self,
+      nixpkgs,
+      devenv,
+      ...
+    }@inputs:
+    let
+      system = "x86_64-linux";
+      pkgs = import nixpkgs {
+        inherit system;
+        config = {
+          allowUnfree = true;
+        };
+      };
+    in
+    {
+      packages.${system} = {
+        devenv-up = self.devShells.${system}.default.config.procfileScript;
+        devenv-test = self.devShells.${system}.default.config.test;
+      };
+      devShells.${system}.default = devenv.lib.mkShell {
+        inherit inputs pkgs;
+        modules = [
+          (
+            { pkgs, config, ... }:
+            {
+              packages = [
+                pkgs.watchman
+                pkgs.gradle
+              ];
+
+              android = {
+                enable = true;
+                reactNative.enable = true;
+
+                # --- Customization for React Native/Expo ---
+                platforms.version = [
+                  "34"
+                  "35"
+                ]; # Add more if needed
+                buildTools.version = [
+                  "34.0.0"
+                  "35.0.0"
+                ]; # Add more if needed
+                platformTools.version = "34.0.5";
+                tools.version = "26.1.1";
+                cmdLineTools.version = "11.0";
+                cmake.version = [ "3.22.1" ];
+                abis = [
+                  "arm64-v8a"
+                  "x86_64"
+                ];
+                systemImageTypes = [ "google_apis_playstore" ];
+                emulator = {
+                  enable = true;
+                  version = "34.1.9";
+                };
+                ndk.enable = true;
+                googleAPIs.enable = true;
+                googleTVAddOns.enable = true;
+                extras = [ "extras;google;gcm" ];
+                extraLicenses = [
+                  "android-sdk-preview-license"
+                  "android-googletv-license"
+                  "android-sdk-arm-dbt-license"
+                  "google-gdk-license"
+                  "intel-android-extra-license"
+                  "intel-android-sysimage-license"
+                  "mips-android-sysimage-license"
+                ];
+                android-studio = {
+                  enable = true;
+                  package = pkgs.android-studio;
+                };
+                sources.enable = false;
+                systemImages.enable = true;
+              };
+            }
+          )
+        ];
+      };
+    };
+}
+</file>
+
+<file path="metro.config.js">
+const { getDefaultConfig } = require('expo/metro-config');
+const { withNativeWind } = require('nativewind/metro');
+
+const config = getDefaultConfig(__dirname);
+
+module.exports = withNativeWind(config, { input: './global.css' });
+</file>
+
+<file path="prettier.config.js">
+module.exports = {
+  printWidth: 100,
+  tabWidth: 2,
+  singleQuote: true,
+  bracketSameLine: true,
+  trailingComma: 'es5',
+};
+</file>
+
+<file path="README.md">
+# Welcome to your Expo app 👋
+
+This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+
+
+Create an emulator 
+```bash
+avdmanager create avd --force --name android-emulator --package 'system-images;android-35;google_apis_playstore_ps16k;x86_64'
+```
+
+## Get started
+
+1. Install dependencies
+
+   ```bash
+   npm install
+   ```
+
+2. Start the app
+
+   ```bash
+    npx expo start
+   ```
+
+### Search for icons here 
+`https://icons.expo.fyi/Index`
+
+In the output, you'll find options to open the app in a
+
+- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
+- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
+- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
+- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+
+You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+
+## Get a fresh project
+
+When you're ready, run:
+
+```bash
+npm run reset-project
+```
+
+This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+
+## Learn more
+
+To learn more about developing your project with Expo, look at the following resources:
+
+- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
+- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+
+## Join the community
+
+Join our community of developers creating universal apps.
+
+- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
+- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+</file>
+
+<file path="app/_layout.tsx">
+import { useFonts } from 'expo-font';
+import { SplashScreen, Stack } from 'expo-router';
+import React, { useEffect } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useReactQueryDevTools } from '@dev-plugins/react-query';
+import './global.css';
+
+SplashScreen.preventAutoHideAsync();
+const queryClient = new QueryClient();
+
+export const unstable_settings = {
+  // Ensure that reloading on `/modal` keeps a back button present.
+  initialRouteName: '(tabs)',
+};
+
+export default function RootLayout() {
+  useReactQueryDevTools(queryClient);
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
+  if (!loaded) return null;
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+      </Stack>
+    </QueryClientProvider>
+  );
+}
+</file>
+
+<file path="components/TabBarIcon.tsx">
+// import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { StyleSheet } from 'react-native';
+
+export const TabBarIcon = (props: {
+  name: React.ComponentProps<typeof FontAwesome>['name'];
+  color: string;
+}) => {
+  return <Ionicons size={28} style={styles.tabBarIcon} {...props} />;
+};
+
+export const styles = StyleSheet.create({
+  tabBarIcon: {
+    marginBottom: -3,
+  },
+});
+</file>
+
+<file path="app.config.ts">
+export const config = {
+  API_BASE_URL: 'http://10.0.2.2:5000',
+  WS_BASE_URL: 'ws://10.0.2.2:8000',
+};
+</file>
+
+<file path="app.json">
+{
+  "expo": {
+    "name": "sc-mobile",
+    "slug": "sc-mobile",
+    "version": "1.0.0",
+    "scheme": "sc-mobile",
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "tsconfigPaths": true
+    },
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.anonymous.scmobile"
+    }
+  }
+}
+</file>
+
+<file path="tsconfig.json">
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "~/*": [
+        "*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "nativewind-env.d.ts"
+  ]
+}
+</file>
+
+<file path="app/(tabs)/_layout.tsx">
+import { Link, Tabs, router, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
+import { TouchableOpacity, Text } from 'react-native';
+
+import { TabBarIcon } from '../../components/TabBarIcon';
+import { checkAuth } from '../../utils/apiClient';
+
+export default function TabLayout() {
+  useFocusEffect(
+    useCallback(() => {
+      const verifyAuthentication = async () => {
+        console.log('Checking auth status for tabs...');
+        try {
+          const authStatus = await checkAuth();
+          if (authStatus === 401) {
+            console.log('User is not authenticated or token expired. Redirecting to login.');
+            router.replace('/login');
+          } else {
+            console.log('User is authenticated for tabs.');
+          }
+        } catch (error) {
+          console.error('Error during auth check for tabs:', error);
+          router.replace('/login');
+        }
+      };
+
+      verifyAuthentication();
+    }, [])
+  );
+
+  return (
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: '#000000',
+        tabBarStyle: {
+          backgroundColor: '#ffffff',
+          borderTopColor: '#e5e5e5',
+        },
+        headerStyle: {
+          backgroundColor: '#f8fafc',
+        },
+        headerTintColor: '#1f2937',
+      }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Tab One',
+          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          headerRight: () => (
+            <Link href="/modal" asChild>
+              <TouchableOpacity className="mr-4 px-3 py-2 bg-blue-500 rounded-lg active:bg-blue-600">
+                <Text className="text-white font-medium text-sm">Modal</Text>
+              </TouchableOpacity>
+            </Link>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: 'Chat',
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="chatbubble-outline" color={color} solid={false} regular />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <TabBarIcon name="person-outline" color={color} />,
+        }}
+      />
+    </Tabs>
+  );
+}
+</file>
+
+<file path="app/(tabs)/chat.tsx">
+// ChatScreen.tsx
+import { router } from 'expo-router';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { GiftedChat, IMessage, User } from 'react-native-gifted-chat';
+import { config } from '~/app.config';
+import { checkAuth } from '~/utils/apiClient';
+
+// Change this to your computer's LAN IP address!
+
+const WS_URL = `${config.WS_BASE_URL}`;
+
+const initMessages = [
+  {
+    messageType: 'IdMessage',
+    senderId: '550e8400-e29b-41d4-a716-446655440000',
+    timestamp: '2025-04-19T13:00:00Z',
+  },
+];
+
+export default function ChatScreen() {
+  const ws = useRef<WebSocket | null>(null);
+  const [messages, setMessages] = useState<IMessage[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    ws.current = new WebSocket(WS_URL);
+
+    ws.current.onopen = () => {
+      console.log('connected');
+      for (const msg of initMessages) {
+        console.log(msg);
+        ws.current?.send(JSON.stringify(msg));
+        console.log('INIT:', msg);
+      }
+    };
+
+    ws.current.onmessage = (e) => {
+      try {
+        const { messageType, payload, meta } = JSON.parse(e.data);
+        console.log('RECEIVED:', e.data);
+        console.log('type:', messageType);
+        console.log('payload:', payload);
+        console.log('meta:', meta);
+
+        const iMessage: IMessage[] = [
+          {
+            _id: meta.messageId,
+            text: payload.content,
+            createdAt: new Date(meta.timestamp),
+            user: { _id: meta.senderId },
+          },
+        ];
+
+        if (messageType === 'ChatMessage') {
+          setMessages((prev) => GiftedChat.append(prev, iMessage));
+          console.log('Message appended');
+        }
+        if (messageType === 'history') {
+          setMessages(GiftedChat.append([], iMessage));
+        }
+      } catch (e) {
+        console.warn('Invalid message from server', e.data);
+      }
+    };
+
+    ws.current.onerror = (e) => {
+      console.warn('WebSocket error', e);
+    };
+
+    const cur = ws.current;
+    return () => {
+      cur && cur.close();
+      console.log('CLOSED');
+    };
+  }, []);
+
+  const onSend = useCallback((newMsgs: IMessage[] = []) => {
+    console.log('New Messges', newMsgs);
+    const msg = newMsgs[0];
+    setMessages((prev) => GiftedChat.append(prev, [{ ...msg, pending: true }]));
+
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      const msgConst = JSON.stringify({
+        messageType: 'ChatMessage',
+        payload: {
+          targetType: 'user',
+          targetId: 'd290f1ee-6c54-4b01-90e6-d701748f0851',
+          content: msg.text,
+        },
+        meta: {
+          messageId: '4a9f3e7b-8c2d-4d6f-b654-abcdef654321',
+          senderId: '550e8400-e29b-41d4-a716-446655440000',
+          timestamp: '2025-04-19T13:00:05Z',
+        },
+      });
+      ws.current.send(msgConst);
+      console.log('SEND:', msgConst);
+    }
+  }, []);
+
+  const handleTyping = useCallback(() => {
+    setIsTyping(true);
+    // Optionally, send typing events to server here
+  }, []);
+
+  return (
+    <GiftedChat
+      messages={messages}
+      onSend={onSend}
+      onInputTextChanged={handleTyping}
+      // isTyping={isTyping}
+      user={{ _id: 'u42', name: 'Ada' }}
+      scrollToBottom
+    />
+  );
+}
+</file>
+
+<file path="app/login.tsx">
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { authUser } from '~/utils/auth';
+import * as SecureStore from 'expo-secure-store';
+
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const router = useRouter();
+
+  const handleLogin = async () => {
+    setError('');
+    try {
+      const { access_token, refresh_token } = await authUser({
+        email,
+        password,
+      });
+
+      console.log(access_token, refresh_token);
+      try {
+        await SecureStore.setItemAsync('accessToken', JSON.stringify(access_token));
+        await SecureStore.setItemAsync('refreshToken', JSON.stringify(refresh_token));
+      } catch (e) {
+        console.error(e);
+      }
+
+      router.replace('/'); // Or to a specific authenticated route
+    } catch (e: any) {
+      setError(e.message || 'Something went wrong');
+    }
+  };
+
+  return (
+    <View className="flex-1 justify-center items-center bg-gray-50 px-6">
+      <View className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm">
+        <Text className="text-3xl font-bold text-center mb-2 text-gray-900">Welcome Back</Text>
+        <Text className="text-gray-600 text-center mb-6">Please sign in to your account</Text>
+
+        <View className="space-y-4">
+          <View>
+            <Text className="text-gray-700 text-sm font-medium mb-2">Email</Text>
+            <TextInput
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              placeholder="you@email.com"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
+
+          <View>
+            <Text className="text-gray-700 text-sm font-medium mb-2">Password</Text>
+            <TextInput
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
+        </View>
+
+        <TouchableOpacity
+          className="w-full bg-blue-600 py-4 rounded-lg mt-6 active:bg-blue-700"
+          onPress={handleLogin}>
+          <Text className="text-white text-center font-semibold text-lg">Sign in</Text>
+        </TouchableOpacity>
+
+        {error ? <Text className="text-red-500 text-center mt-3 text-sm">{error}</Text> : null}
+
+        <View className="border-t border-gray-200 my-6" />
+
+        <View className="flex-row justify-center items-center space-x-2">
+          <Text className="text-gray-600">Don't have an account?</Text>
+          <TouchableOpacity onPress={() => Alert.alert('Sign up!')}>
+            <Text className="text-blue-600 font-semibold">Sign up</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+}
+</file>
+
+<file path=".gitignore">
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+# expo router
+expo-env.d.ts
+# tamagui
+.tamagui/
+# firebase/supabase/vexo
+.env
+
+ios
+android
+
+# macOS
+.DS_Store
+
+# Temporary files created by Metro to check the health of the file watcher
+.metro-health-check*
+
+.devenv
+.direnv/
+local.properties
+android/
+.android/
+.aider*
+</file>
+
+<file path="app/(tabs)/index.tsx">
+import { Stack } from 'expo-router';
+import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+
+const mockChats = [
+  {
+    id: 1,
+    name: 'Sarah Johnson',
+    lastMessage: 'Hey! How was your meeting today?',
+    timestamp: '2:30 PM',
+    unread: 2,
+    avatar:
+      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+    online: true,
+  },
+  {
+    id: 2,
+    name: 'Team Project',
+    lastMessage: 'Alex: The new designs look great!',
+    timestamp: '1:45 PM',
+    unread: 0,
+    avatar: null,
+    online: false,
+  },
+  {
+    id: 3,
+    name: 'Mike Chen',
+    lastMessage: "Sure, let's grab coffee tomorrow",
+    timestamp: '12:15 PM',
+    unread: 0,
+    avatar:
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+    online: true,
+  },
+  {
+    id: 4,
+    name: 'Mom',
+    lastMessage: "Don't forget dinner on Sunday!",
+    timestamp: '11:30 AM',
+    unread: 1,
+    avatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+    online: false,
+  },
+  {
+    id: 5,
+    name: 'Design Team',
+    lastMessage: 'Emma: Updated the mockups in Figma',
+    timestamp: 'Yesterday',
+    unread: 0,
+    avatar: null,
+    online: false,
+  },
+  {
+    id: 6,
+    name: 'David Wilson',
+    lastMessage: 'Thanks for the help with the code!',
+    timestamp: 'Yesterday',
+    unread: 0,
+    avatar:
+      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    online: false,
+  },
+];
+
+export default function ChatList() {
+  const renderAvatar = (chat: (typeof mockChats)[0]) => {
+    if (chat.avatar) {
+      return (
+        <View className="relative">
+          <Image source={{ uri: chat.avatar }} className="w-12 h-12 rounded-full" />
+          {chat.online && (
+            <View className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
+          )}
+        </View>
+      );
+    }
+
+    return (
+      <View className="w-12 h-12 bg-gray-400 rounded-full items-center justify-center">
+        <Text className="text-white font-semibold text-lg">
+          {chat.name
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .slice(0, 2)}
+        </Text>
+      </View>
+    );
+  };
+
+  return (
+    <>
+      <Stack.Screen options={{ title: 'Chats' }} />
+      <View className="flex-1 bg-white">
+        {/* Header */}
+        <View className="px-4 py-3 border-b border-gray-200">
+          <Text className="text-2xl font-bold text-gray-900">Messages</Text>
+        </View>
+
+        {/* Chat List */}
+        <ScrollView className="flex-1">
+          {mockChats.map((chat) => (
+            <TouchableOpacity
+              key={chat.id}
+              className="flex-row items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50">
+              {/* Avatar */}
+              <View className="mr-3">{renderAvatar(chat)}</View>
+
+              {/* Chat Info */}
+              <View className="flex-1">
+                <View className="flex-row justify-between items-center mb-1">
+                  <Text className="font-semibold text-gray-900 text-base">{chat.name}</Text>
+                  <Text className="text-sm text-gray-500">{chat.timestamp}</Text>
+                </View>
+
+                <View className="flex-row justify-between items-center">
+                  <Text
+                    className={`text-sm flex-1 mr-2 ${chat.unread > 0 ? 'text-gray-900 font-medium' : 'text-gray-600'}`}
+                    numberOfLines={1}>
+                    {chat.lastMessage}
+                  </Text>
+
+                  {chat.unread > 0 && (
+                    <View className="bg-blue-500 rounded-full min-w-[20px] h-5 items-center justify-center px-1">
+                      <Text className="text-white text-xs font-medium">{chat.unread}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Floating Action Button */}
+        <TouchableOpacity className="absolute bottom-6 right-6 w-14 h-14 bg-blue-500 rounded-full items-center justify-center shadow-lg active:bg-blue-600">
+          <Text className="text-white text-2xl">✏️</Text>
+        </TouchableOpacity>
+      </View>
+    </>
+  );
+}
+</file>
+
+<file path="utils/auth.ts">
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
+import { config } from '../app.config';
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface User {
+  email: String;
+  password: String;
+}
+
+interface AuthResponse {
+  access_token: string;
+  refresh_token: string;
+  // Add any other expected fields from your auth response
+}
+interface Jwt {
+  user_id: string;
+  username: string;
+}
+
+export interface UserData {
+  userId: string | null;
+  username: string | null;
+}
+
+export async function authUser({ email, password }: User): Promise<AuthResponse> {
+  try {
+    const response = await axios.post<AuthResponse>(
+      `${config.API_BASE_URL}/auth/token`,
+      {
+        email: email,
+        password: password,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    console.log('Auth Response Data:', response.data);
+    return response.data;
+  } catch (e: any) {
+    let errorMessage = 'Authentication failed';
+    if (axios.isAxiosError(e) && e.response) {
+      console.error('Auth Error Data:', e.response.data);
+      console.error('Auth Error Status:', e.response.status);
+      errorMessage =
+        e.response.data?.message ||
+        e.response.data?.error ||
+        `Request failed with status ${e.response.status}`;
+    } else if (axios.isAxiosError(e) && e.request) {
+      console.error('Auth Error Request:', e.request); // This was the error you saw earlier
+      errorMessage = 'No response from server. Is the server running and accessible?';
+    } else {
+      console.error('Auth Error Message:', e.message);
+      errorMessage = e.message;
+    }
+    throw new Error(errorMessage);
+  }
+}
+
+export async function getUserdata(): Promise<UserData> {
+  let userId: string | null = null;
+  let username: string | null = null;
+
+  try {
+    userId = await AsyncStorage.getItem('userId');
+    username = await AsyncStorage.getItem('username');
+    if (userId === null || username === null) {
+      try {
+        console.log('user id or username null, calling decodeJwt');
+        decodeJwt();
+        userId = await AsyncStorage.getItem('userId');
+        username = await AsyncStorage.getItem('username');
+      } catch (e) {
+        console.error('Error while getting asyncstorage items', e);
+      }
+    }
+
+    console.log('Retrieved from AsyncStorage - userId:', userId);
+    console.log('Retrieved from AsyncStorage - username:', username);
+  } catch (e) {}
+
+  return {
+    userId,
+    username,
+  };
+}
+
+async function decodeJwt() {
+  const accessToken = await SecureStore.getItemAsync('accessToken');
+  const decodedToken = jwtDecode<Jwt>(accessToken); // Use generic for type safety
+  console.log('Decoded Token:', decodedToken);
+
+  try {
+    if (typeof decodedToken.user_id === 'string') {
+      await AsyncStorage.setItem('userId', decodedToken.user_id);
+    } else {
+      console.warn('decodedToken.user_id is not a string. Value:', decodedToken.user_id);
+    }
+
+    if (typeof decodedToken.username === 'string') {
+      await AsyncStorage.setItem('username', decodedToken.username);
+    } else {
+      console.warn('decodedToken.username is not a string. Value:', decodedToken.username);
+    }
+  } catch (e) {
+    console.error('Error saving user data to AsyncStorage:', e);
+    // Decide if this error should fail the whole authUser function
+    // For now, we'll let authUser succeed but log the storage error.
+  }
+}
+</file>
+
+<file path="package.json">
+{
+    "name": "sc-mobile",
+    "version": "1.0.0",
+    "main": "expo-router/entry",
+    "scripts": {
+        "android": "expo run:android",
+        "ios": "expo run:ios",
+        "start": "expo start",
+        "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" && prettier -c \"**/*.{js,jsx,ts,tsx,json}\"",
+        "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
+        "web": "expo start --web"
+    },
+    "dependencies": {
+        "@dev-plugins/react-query": "~0.2.0",
+        "@expo/vector-icons": "^14.0.0",
+        "@react-native-async-storage/async-storage": "1.23.1",
+        "@react-navigation/native": "^7.0.3",
+        "@supabase/supabase-js": "^2.38.4",
+        "@tanstack/react-query": "^5.74.4",
+        "axios": "^1.9.0",
+        "expo": "^52.0.46",
+        "expo-constants": "~17.0.8",
+        "expo-font": "~13.0.3",
+        "expo-linking": "~7.0.5",
+        "expo-router": "~4.0.6",
+        "expo-secure-store": "~14.0.1",
+        "expo-splash-screen": "~0.29.24",
+        "expo-status-bar": "~2.0.1",
+        "expo-system-ui": "~4.0.9",
+        "expo-web-browser": "~14.0.2",
+        "jwt-decode": "^4.0.0",
+        "nativewind": "^4.1.23",
+        "react": "18.3.1",
+        "react-dom": "18.3.1",
+        "react-native": "0.76.9",
+        "react-native-gesture-handler": "~2.20.2",
+        "react-native-gifted-chat": "^2.8.1",
+        "react-native-keyboard-controller": "^1.17.1",
+        "react-native-reanimated": "^3.16.2",
+        "react-native-safe-area-context": "^4.12.0",
+        "react-native-screens": "~4.4.0",
+        "react-native-svg": "^15.12.0",
+        "react-native-web": "~0.19.10",
+        "tailwindcss": "^3.4.17"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.20.0",
+        "@types/react": "~18.3.12",
+        "@typescript-eslint/eslint-plugin": "^7.7.0",
+        "@typescript-eslint/parser": "^7.7.0",
+        "eslint": "^8.57.0",
+        "eslint-config-universe": "^12.0.1",
+        "prettier": "^3.2.5",
+        "typescript": "~5.3.3"
+    },
+    "eslintConfig": {
+        "extends": "universe/native",
+        "root": true
+    },
+    "private": true
+}
+</file>
+
+</files>

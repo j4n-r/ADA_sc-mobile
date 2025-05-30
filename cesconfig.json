@@ -1,40 +1,36 @@
 {
-  "cesVersion": "2.14.3",
-  "projectName": "sc-mobile",
-  "packages": [
-    {
-      "name": "expo-router",
-      "type": "navigation",
-      "options": {
-        "type": "tabs"
-      }
+    "cesVersion": "2.14.3",
+    "projectName": "sc-mobile",
+    "packages": [
+        {
+            "name": "expo-router",
+            "type": "navigation",
+            "options": {
+                "type": "tabs"
+            }
+        },
+        {
+            "name": "supabase",
+            "type": "authentication"
+        }
+    ],
+    "flags": {
+        "noGit": false,
+        "noInstall": false,
+        "overwrite": false,
+        "importAlias": true,
+        "packageManager": "npm",
+        "eas": false,
+        "publish": false
     },
-    {
-      "name": "tamagui",
-      "type": "styling"
+    "packageManager": {
+        "type": "npm",
+        "version": "10.8.2"
     },
-    {
-      "name": "supabase",
-      "type": "authentication"
+    "os": {
+        "type": "Linux",
+        "platform": "linux",
+        "arch": "x64",
+        "kernelVersion": "6.6.83"
     }
-  ],
-  "flags": {
-    "noGit": false,
-    "noInstall": false,
-    "overwrite": false,
-    "importAlias": true,
-    "packageManager": "npm",
-    "eas": false,
-    "publish": false
-  },
-  "packageManager": {
-    "type": "npm",
-    "version": "10.8.2"
-  },
-  "os": {
-    "type": "Linux",
-    "platform": "linux",
-    "arch": "x64",
-    "kernelVersion": "6.6.83"
-  }
 }

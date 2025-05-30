@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Text, Input, Stack, Button, Label, YStack, XStack, Separator, Theme } from 'tamagui';
+import { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { authUser } from '~/utils/auth';
-import * as SecureStore from 'expo-secure-store'; // Import SecureStore
+import * as SecureStore from 'expo-secure-store';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -33,61 +33,55 @@ export default function Login() {
   };
 
   return (
-    <Theme name="light">
-      <YStack f={1} jc="center" ai="center" bg="$background" p="$6" minHeight={400}>
-        <Stack bg="$color2" p="$6" br="$4" elevation={4} width={350} maxWidth="90vw">
-          <Text fontSize={28} fontWeight="700" ta="center" mb="$2">
-            Welcome Back
-          </Text>
-          <Text color="$color10" ta="center" mb="$4">
-            Please sign in to your account
-          </Text>
+    <View className="flex-1 justify-center items-center bg-gray-50 px-6">
+      <View className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm">
+        <Text className="text-3xl font-bold text-center mb-2 text-gray-900">Welcome Back</Text>
+        <Text className="text-gray-600 text-center mb-6">Please sign in to your account</Text>
 
-          <YStack space="$3">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
+        <View className="space-y-4">
+          <View>
+            <Text className="text-gray-700 text-sm font-medium mb-2">Email</Text>
+            <TextInput
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               placeholder="you@email.com"
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
-              size="$4"
+              placeholderTextColor="#9CA3AF"
             />
+          </View>
 
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
+          <View>
+            <Text className="text-gray-700 text-sm font-medium mb-2">Password</Text>
+            <TextInput
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               placeholder="Password"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              size="$4"
+              placeholderTextColor="#9CA3AF"
             />
-          </YStack>
+          </View>
+        </View>
 
-          <Button mt="$4" size="$5" onPress={() => handleLogin()} themeInverse>
-            Sign in
-          </Button>
-          {error ? (
-            <Text color="red" mt="$2">
-              {error}
-            </Text>
-          ) : null}
-          <Separator my="$3" />
+        <TouchableOpacity
+          className="w-full bg-blue-600 py-4 rounded-lg mt-6 active:bg-blue-700"
+          onPress={handleLogin}>
+          <Text className="text-white text-center font-semibold text-lg">Sign in</Text>
+        </TouchableOpacity>
 
-          <XStack jc="center" ai="center" space="$2">
-            <Text color="$color10">Don't have an account?</Text>
-            <Text
-              color="$color9"
-              fontWeight="600"
-              cursor="pointer"
-              onPress={() => alert('Sign up!')}>
-              Sign up
-            </Text>
-          </XStack>
-        </Stack>
-      </YStack>
-    </Theme>
+        {error ? <Text className="text-red-500 text-center mt-3 text-sm">{error}</Text> : null}
+
+        <View className="border-t border-gray-200 my-6" />
+
+        <View className="flex-row justify-center items-center space-x-2">
+          <Text className="text-gray-600">Don't have an account?</Text>
+          <TouchableOpacity onPress={() => Alert.alert('Sign up!')}>
+            <Text className="text-blue-600 font-semibold">Sign up</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
   );
 }

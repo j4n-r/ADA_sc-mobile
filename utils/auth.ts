@@ -19,7 +19,7 @@ interface Jwt {
   username: string;
 }
 
-interface UserData {
+export interface UserData {
   userId: string | null;
   username: string | null;
 }

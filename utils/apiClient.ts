@@ -28,7 +28,6 @@ apiClient.interceptors.request.use(
 export const checkAuth = async () => {
   try {
     const response = await apiClient.get('/');
-    console.log(response.request);
     return response.data;
   } catch (error) {
     console.error('Error fetching protected data:', error);
