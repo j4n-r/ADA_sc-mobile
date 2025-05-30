@@ -2,8 +2,8 @@
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
+Create an emulator
 
-Create an emulator 
 ```bash
 avdmanager create avd --force --name android-emulator --package 'system-images;android-35;google_apis_playstore_ps16k;x86_64'
 ```
@@ -22,7 +22,8 @@ avdmanager create avd --force --name android-emulator --package 'system-images;a
     npx expo start
    ```
 
-### Search for icons here 
+### Search for icons here
+
 `https://icons.expo.fyi/Index`
 
 In the output, you'll find options to open the app in a
