@@ -1,11 +1,7 @@
 // ChatScreen.tsx
-import { router } from 'expo-router';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { GiftedChat, IMessage, User } from 'react-native-gifted-chat';
-import { config } from '~/app.config';
-import { checkAuth } from '~/utils/apiClient';
-
-// Change this to your computer's LAN IP address!
+import { config } from '~/utils/auth';
 
 const WS_URL = `${config.WS_BASE_URL}`;
 

@@ -47,7 +47,7 @@ android/
 local.properties
 
 # Android Studio specific (user settings, cache, etc.)
-.android/
+android/
 android/
 
 # AI tool specific

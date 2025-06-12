@@ -1,12 +1,31 @@
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
-import { config } from '../app.config';
+import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Get configuration from Expo Constants
+const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
+const WS_BASE_URL = Constants.expoConfig?.extra?.WS_BASE_URL;
+
+// Validate configuration
+if (!API_BASE_URL) {
+  throw new Error('API_BASE_URL not found in app configuration');
+}
+
+if (!WS_BASE_URL) {
+  throw new Error('WS_BASE_URL not found in app configuration');
+}
+
+// Export configuration for use in other files
+export const config = {
+  API_BASE_URL,
+  WS_BASE_URL,
+};
+
 interface User {
-  email: String;
-  password: String;
+  email: string;
+  password: string;
 }
 
 interface AuthResponse {
@@ -14,6 +33,7 @@ interface AuthResponse {
   refresh_token: string;
   // Add any other expected fields from your auth response
 }
+
 interface Jwt {
   user_id: string;
   username: string;
@@ -27,7 +47,7 @@ export interface UserData {
 export async function authUser({ email, password }: User): Promise<AuthResponse> {
   try {
     const response = await axios.post<AuthResponse>(
-      `${config.API_BASE_URL}/auth/token`,
+      `${API_BASE_URL}/auth/token`,
       {
         email: email,
         password: password,
@@ -51,7 +71,7 @@ export async function authUser({ email, password }: User): Promise<AuthResponse>
         e.response.data?.error ||
         `Request failed with status ${e.response.status}`;
     } else if (axios.isAxiosError(e) && e.request) {
-      console.error('Auth Error Request:', e.request); // This was the error you saw earlier
+      console.error('Auth Error Request:', e.request);
       errorMessage = 'No response from server. Is the server running and accessible?';
     } else {
       console.error('Auth Error Message:', e.message);
@@ -71,7 +91,7 @@ export async function getUserdata(): Promise<UserData> {
     if (userId === null || username === null) {
       try {
         console.log('user id or username null, calling decodeJwt');
-        decodeJwt();
+        await decodeJwt(); // Added await here for proper async handling
         userId = await AsyncStorage.getItem('userId');
         username = await AsyncStorage.getItem('username');
       } catch (e) {
@@ -81,7 +101,9 @@ export async function getUserdata(): Promise<UserData> {
 
     console.log('Retrieved from AsyncStorage - userId:', userId);
     console.log('Retrieved from AsyncStorage - username:', username);
-  } catch (e) {}
+  } catch (e) {
+    console.error('Error retrieving user data:', e);
+  }
 
   return {
     userId,
@@ -91,10 +113,15 @@ export async function getUserdata(): Promise<UserData> {
 
 async function decodeJwt() {
   const accessToken = await SecureStore.getItemAsync('accessToken');
-  const decodedToken = jwtDecode<Jwt>(accessToken); // Use generic for type safety
-  console.log('Decoded Token:', decodedToken);
+  if (!accessToken) {
+    console.warn('No access token found in SecureStore.');
+    return;
+  }
 
   try {
+    const decodedToken = jwtDecode<Jwt>(accessToken);
+    console.log('Decoded Token:', decodedToken);
+
     if (typeof decodedToken.user_id === 'string') {
       await AsyncStorage.setItem('userId', decodedToken.user_id);
     } else {
@@ -107,8 +134,7 @@ async function decodeJwt() {
       console.warn('decodedToken.username is not a string. Value:', decodedToken.username);
     }
   } catch (e) {
-    console.error('Error saving user data to AsyncStorage:', e);
-    // Decide if this error should fail the whole authUser function
-    // For now, we'll let authUser succeed but log the storage error.
+    console.error('Error decoding JWT or saving user data to AsyncStorage:', e);
+    throw e; // Re-throw to let caller handle the error
   }
 }

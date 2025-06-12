@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { config } from '../app.config';
+import { config } from './auth';
 import { router } from 'expo-router';
 
 const apiClient: AxiosInstance = axios.create({
