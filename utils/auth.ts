@@ -37,6 +37,7 @@ interface AuthResponse {
 interface Jwt {
   user_id: string;
   username: string;
+  exp: string;
 }
 
 export interface UserData {
@@ -60,6 +61,14 @@ export async function authUser({ email, password }: User): Promise<AuthResponse>
     );
 
     console.log('Auth Response Data:', response.data);
+    let { access_token, refresh_token } = response.data;
+    try {
+      await SecureStore.setItemAsync('accessToken', JSON.stringify(access_token));
+      await SecureStore.setItemAsync('refreshToken', JSON.stringify(refresh_token));
+    } catch (e) {
+      console.error(e);
+    }
+
     return response.data;
   } catch (e: any) {
     let errorMessage = 'Authentication failed';
@@ -132,6 +141,13 @@ async function decodeJwt() {
       await AsyncStorage.setItem('username', decodedToken.username);
     } else {
       console.warn('decodedToken.username is not a string. Value:', decodedToken.username);
+    }
+
+    let exp = decodedToken.exp.toString();
+    if (typeof decodedToken.exp === 'string') {
+      await AsyncStorage.setItem('exp', exp);
+    } else {
+      console.warn('decodedToken.username s not a string. Value:', exp);
     }
   } catch (e) {
     console.error('Error decoding JWT or saving user data to AsyncStorage:', e);

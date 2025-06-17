@@ -13,18 +13,10 @@ export default function Login() {
   const handleLogin = async () => {
     setError('');
     try {
-      const { access_token, refresh_token } = await authUser({
+      await authUser({
         email,
         password,
       });
-
-      console.log(access_token, refresh_token);
-      try {
-        await SecureStore.setItemAsync('accessToken', JSON.stringify(access_token));
-        await SecureStore.setItemAsync('refreshToken', JSON.stringify(refresh_token));
-      } catch (e) {
-        console.error(e);
-      }
 
       router.replace('/'); // Or to a specific authenticated route
     } catch (e: any) {

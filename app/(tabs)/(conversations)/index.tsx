@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useState, useEffect } from 'react';
 import { getUserdata } from '~/utils/auth';
@@ -37,6 +38,7 @@ export default function ChatList() {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const transformConversationToChat = (conversation: Conversation): ChatItem => {
     const formatTimestamp = (dateString: string) => {
@@ -63,7 +65,7 @@ export default function ChatList() {
     };
   };
 
-  // Fetch user data and conversations on component mount
+  // Fetch user data on component mount
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -74,6 +76,7 @@ export default function ChatList() {
         setError('Failed to load user data');
       }
     };
+
     fetchUserData();
   }, []);
 
@@ -87,7 +90,7 @@ export default function ChatList() {
         const response = await getConversations(userData.userId);
 
         if (response === 401) {
-          setError('Authentication failed');
+          setError('Session expired. Please log in again.');
           return;
         }
 
@@ -130,6 +133,21 @@ export default function ChatList() {
     );
   };
 
+  const handleRetry = async () => {
+    setError(null);
+    setLoading(true);
+
+    // Re-fetch user data and conversations
+    try {
+      const data = await getUserdata();
+      setUserData(data);
+    } catch (error) {
+      console.error('Failed to fetch user data on retry:', error);
+      setError('Failed to load user data');
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <View className="flex-1 bg-white items-center justify-center">
@@ -142,6 +160,9 @@ export default function ChatList() {
     return (
       <View className="flex-1 bg-white items-center justify-center">
         <Text className="text-red-500">{error}</Text>
+        <TouchableOpacity onPress={handleRetry} className="mt-4 px-4 py-2 bg-blue-500 rounded">
+          <Text className="text-white">Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -161,6 +182,9 @@ export default function ChatList() {
             chats.map((chat) => (
               <TouchableOpacity
                 key={chat.id}
+                onPress={() => {
+                  router.push('/chat');
+                }}
                 className="flex-row items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50">
                 {/* Avatar */}
                 <View className="mr-3">{renderAvatar(chat)}</View>

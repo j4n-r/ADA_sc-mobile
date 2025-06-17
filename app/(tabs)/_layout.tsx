@@ -1,58 +1,74 @@
-import { Link, Tabs, router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
-import { TouchableOpacity, Text } from 'react-native';
-
+import { Tabs, router, useFocusEffect } from 'expo-router';
+import { useState, useEffect } from 'react';
 import { TabBarIcon } from '../../components/TabBarIcon';
 import { checkAuth } from '../../utils/apiClient';
 
 export default function TabLayout() {
-  useFocusEffect(
-    useCallback(() => {
-      const verifyAuthentication = async () => {
-        console.log('Checking auth status for tabs...');
-        try {
-          const authStatus = await checkAuth();
-          if (authStatus === 401) {
-            console.log('User is not authenticated or token expired. Redirecting to login.');
-            router.replace('/login');
-          } else {
-            console.log('User is authenticated for tabs.');
-          }
-        } catch (error) {
-          console.error('Error during auth check for tabs:', error);
+  useEffect(() => {
+    const verifyAuth = async () => {
+      try {
+        console.log('🔍 Verifying authentication...');
+        const isAuth = await checkAuth();
+
+        console.log('🔍 Auth result:', isAuth);
+
+        if (isAuth) {
+          console.log(' User is authenticated');
+        } else {
+          console.log(' User is not authenticated, redirecting to login');
           router.replace('/login');
         }
-      };
+      } catch (error) {
+        console.error(' Error verifying auth:', error);
+        router.replace('/login');
+      } finally {
+      }
+    };
 
-      verifyAuthentication();
-    }, [])
-  );
+    verifyAuth();
+  }, []);
 
   return (
     <Tabs
+      backBehavior="history"
       screenOptions={{
-        tabBarActiveTintColor: '#000000',
+        tabBarActiveTintColor: '#3B82F6',
+        tabBarInactiveTintColor: '#6B7280',
         tabBarStyle: {
           backgroundColor: '#ffffff',
           borderTopColor: '#e5e5e5',
+          borderTopWidth: 1,
+          paddingBottom: 5,
+          paddingTop: 5,
+          height: 60,
         },
         headerStyle: {
           backgroundColor: '#f8fafc',
+          elevation: 0,
+          shadowOpacity: 0,
         },
         headerTintColor: '#1f2937',
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
       }}>
       <Tabs.Screen
-        name="index"
+        name="(conversations)"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Chats',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'chatbubbles' : 'chatbubbles-outline'} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <TabBarIcon name="person-outline" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'person' : 'person-outline'} color={color} />
+          ),
         }}
       />
     </Tabs>
