@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 import { Stack, router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,7 +17,6 @@ export default function Home() {
         console.error('Failed to fetch user data for Home screen:', error);
       }
     };
-
     fetchUserData();
   }, []);
 
@@ -38,49 +37,97 @@ export default function Home() {
 
   return (
     <>
+      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
       <Stack.Screen
         options={{
           title: 'Dashboard',
           headerStyle: { backgroundColor: '#f8fafc' },
           headerTintColor: '#1f2937',
+          headerShadowVisible: false,
         }}
       />
-      <View className="flex-1 bg-gray-50 p-4 items-center">
-        <View className="w-full max-w-md bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-          {/* Card Header */}
-          <View className="p-6 border-b border-gray-100">
-            <View className="flex-row items-center space-x-3">
-              <View className="w-8 h-8 bg-blue-100 rounded-full items-center justify-center">
-                <Text className="text-blue-600 font-semibold">👤</Text>
-              </View>
-              <Text className="text-2xl font-bold text-gray-900">User Profile</Text>
-            </View>
+      <ScrollView className="flex-1 bg-gradient-to-br from-blue-50 to-indigo-100">
+        <View className="p-6">
+          {/* Welcome Section */}
+          <View className="mb-8">
+            <Text className="text-3xl font-bold text-gray-900 mb-2">Welcome back!</Text>
+            <Text className="text-lg text-gray-600">
+              {userData.username ? `Hello, ${userData.username}` : 'Good to see you'}
+            </Text>
           </View>
 
-          {/* Card Content */}
-          <View className="p-6 space-y-4">
-            <View className="flex-row justify-between items-center">
-              <Text className="text-base text-gray-600">User ID:</Text>
-              <Text className="text-base font-semibold text-gray-900">
-                {userData.userId || 'N/A'}
-              </Text>
+          {/* Profile Card */}
+          <View className="bg-white rounded-2xl shadow-xl border border-gray-100 mb-6 overflow-hidden">
+            {/* Card Header with Gradient */}
+            <View className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6">
+              <View className="flex-row items-center">
+                <View className="w-12 h-12 bg-white/20 rounded-full items-center justify-center mr-4">
+                  <Text className="text-white font-bold text-lg">👤</Text>
+                </View>
+                <View>
+                  <Text className="text-white text-xl font-bold">User Profile</Text>
+                  <Text className="text-blue-100 text-sm">Account Information</Text>
+                </View>
+              </View>
             </View>
-            <View className="flex-row justify-between items-center">
-              <Text className="text-base text-gray-600">Username:</Text>
-              <Text className="text-base font-semibold text-gray-900">
-                {userData.username || 'N/A'}
-              </Text>
+
+            {/* Card Content */}
+            <View className="p-6">
+              {/* User ID Row */}
+              <View className="bg-gray-50 rounded-xl p-4 mb-4">
+                <View className="flex-row items-center mb-2">
+                  <View className="w-6 h-6 bg-blue-100 rounded-full items-center justify-center mr-3">
+                    <Text className="text-blue-600 text-xs font-bold">#</Text>
+                  </View>
+                  <Text className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                    User ID
+                  </Text>
+                </View>
+                <Text className="text-lg font-semibold text-gray-900 ml-9">
+                  {userData.userId || 'Not available'}
+                </Text>
+              </View>
+
+              {/* Username Row */}
+              <View className="bg-gray-50 rounded-xl p-4">
+                <View className="flex-row items-center mb-2">
+                  <View className="w-6 h-6 bg-green-100 rounded-full items-center justify-center mr-3">
+                    <Text className="text-green-600 text-xs font-bold">@</Text>
+                  </View>
+                  <Text className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                    Username
+                  </Text>
+                </View>
+                <Text className="text-lg font-semibold text-gray-900 ml-9">
+                  {userData.username || 'Not available'}
+                </Text>
+              </View>
             </View>
+          </View>
+          {/* Logout Button */}
+          <TouchableOpacity
+            className="bg-red-500 py-4 px-6 rounded-2xl shadow-lg active:bg-red-600"
+            onPress={handleClearTokensAndLogout}
+            style={{
+              shadowColor: '#ef4444',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 8,
+            }}>
+            <View className="flex-row items-center justify-center">
+              <Text className="text-white font-bold text-lg">← Sign Out</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Footer */}
+          <View className="mt-8 items-center">
+            <Text className="text-gray-400 text-sm">
+              Logged in as {userData.username || 'Guest'}
+            </Text>
           </View>
         </View>
-
-        <TouchableOpacity
-          className="w-full max-w-md bg-red-600 py-4 px-6 rounded-lg mt-4 flex-row items-center justify-center space-x-2 active:bg-red-700"
-          onPress={handleClearTokensAndLogout}>
-          <Text className="text-white font-semibold text-lg">🚪</Text>
-          <Text className="text-white font-semibold text-lg">Clear Tokens & Logout</Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </>
   );
 }
