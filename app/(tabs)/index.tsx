@@ -1,69 +1,112 @@
 import { Stack } from 'expo-router';
 import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { useState, useEffect } from 'react';
+import { getUserdata } from '~/utils/auth';
+import { getConversations } from '~/utils/api';
 
-const mockChats = [
-  {
-    id: 1,
-    name: 'Sarah Johnson',
-    lastMessage: 'Hey! How was your meeting today?',
-    timestamp: '2:30 PM',
-    unread: 2,
-    avatar:
-      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-    online: true,
-  },
-  {
-    id: 2,
-    name: 'Team Project',
-    lastMessage: 'Alex: The new designs look great!',
-    timestamp: '1:45 PM',
-    unread: 0,
-    avatar: null,
-    online: false,
-  },
-  {
-    id: 3,
-    name: 'Mike Chen',
-    lastMessage: "Sure, let's grab coffee tomorrow",
-    timestamp: '12:15 PM',
-    unread: 0,
-    avatar:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-    online: true,
-  },
-  {
-    id: 4,
-    name: 'Mom',
-    lastMessage: "Don't forget dinner on Sunday!",
-    timestamp: '11:30 AM',
-    unread: 1,
-    avatar:
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-    online: false,
-  },
-  {
-    id: 5,
-    name: 'Design Team',
-    lastMessage: 'Emma: Updated the mockups in Figma',
-    timestamp: 'Yesterday',
-    unread: 0,
-    avatar: null,
-    online: false,
-  },
-  {
-    id: 6,
-    name: 'David Wilson',
-    lastMessage: 'Thanks for the help with the code!',
-    timestamp: 'Yesterday',
-    unread: 0,
-    avatar:
-      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-    online: false,
-  },
-];
+// Type for conversation data from API
+type Conversation = {
+  conversation_id: string;
+  created_at: string;
+  description: string | null;
+  id: string;
+  image: string | null;
+  joined_at: string;
+  name: string | null;
+  owner_id: string | null;
+  role: string;
+  type: 'dm' | 'group';
+  updated_at: string;
+  user_id: string;
+};
+
+// Type for transformed chat data for display
+type ChatItem = {
+  id: string;
+  name: string;
+  lastMessage: string;
+  timestamp: string;
+  unread: number;
+  avatar?: string;
+  online?: boolean;
+  type: 'dm' | 'group';
+};
 
 export default function ChatList() {
-  const renderAvatar = (chat: (typeof mockChats)[0]) => {
+  const [chats, setChats] = useState<ChatItem[]>([]);
+  const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const transformConversationToChat = (conversation: Conversation): ChatItem => {
+    const formatTimestamp = (dateString: string) => {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+
+      if (diffInHours < 24) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } else {
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      }
+    };
+
+    return {
+      id: conversation.conversation_id,
+      name: conversation.name || (conversation.type === 'dm' ? 'Direct Message' : 'Group Chat'),
+      lastMessage: 'No messages yet', // You'll need to fetch latest message separately
+      timestamp: formatTimestamp(conversation.updated_at),
+      unread: 0, // You'll need to track unread count separately
+      avatar: conversation.image,
+      online: false, // You'll need to track online status separately
+      type: conversation.type,
+    };
+  };
+
+  // Fetch user data and conversations on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const data = await getUserdata();
+        setUserData(data);
+      } catch (error) {
+        console.error('Failed to fetch user data for ChatList:', error);
+        setError('Failed to load user data');
+      }
+    };
+    fetchUserData();
+  }, []);
+
+  // Fetch conversations when userData is available
+  useEffect(() => {
+    const fetchConversations = async () => {
+      if (!userData?.userId) return;
+
+      try {
+        setLoading(true);
+        const response = await getConversations(userData.userId);
+
+        if (response === 401) {
+          setError('Authentication failed');
+          return;
+        }
+
+        if (response && response.conversations) {
+          const transformedChats = response.conversations.map(transformConversationToChat);
+          setChats(transformedChats);
+        }
+      } catch (err) {
+        setError('Failed to load conversations');
+        console.error('Error fetching conversations:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConversations();
+  }, [userData]);
+
+  const renderAvatar = (chat: ChatItem) => {
     if (chat.avatar) {
       return (
         <View className="relative">
@@ -74,7 +117,6 @@ export default function ChatList() {
         </View>
       );
     }
-
     return (
       <View className="w-12 h-12 bg-gray-400 rounded-full items-center justify-center">
         <Text className="text-white font-semibold text-lg">
@@ -88,6 +130,22 @@ export default function ChatList() {
     );
   };
 
+  if (loading) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <Text className="text-gray-500">Loading conversations...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <Text className="text-red-500">{error}</Text>
+      </View>
+    );
+  }
+
   return (
     <>
       <Stack.Screen options={{ title: 'Chats' }} />
@@ -99,42 +157,41 @@ export default function ChatList() {
 
         {/* Chat List */}
         <ScrollView className="flex-1">
-          {mockChats.map((chat) => (
-            <TouchableOpacity
-              key={chat.id}
-              className="flex-row items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50">
-              {/* Avatar */}
-              <View className="mr-3">{renderAvatar(chat)}</View>
+          {chats.length > 0 ? (
+            chats.map((chat) => (
+              <TouchableOpacity
+                key={chat.id}
+                className="flex-row items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50">
+                {/* Avatar */}
+                <View className="mr-3">{renderAvatar(chat)}</View>
 
-              {/* Chat Info */}
-              <View className="flex-1">
-                <View className="flex-row justify-between items-center mb-1">
-                  <Text className="font-semibold text-gray-900 text-base">{chat.name}</Text>
-                  <Text className="text-sm text-gray-500">{chat.timestamp}</Text>
+                {/* Chat Info */}
+                <View className="flex-1">
+                  <View className="flex-row justify-between items-center mb-1">
+                    <Text className="font-semibold text-gray-900 text-base">{chat.name}</Text>
+                    <Text className="text-sm text-gray-500">{chat.timestamp}</Text>
+                  </View>
+                  <View className="flex-row justify-between items-center">
+                    <Text
+                      className={`text-sm flex-1 mr-2 ${chat.unread > 0 ? 'text-gray-900 font-medium' : 'text-gray-600'}`}
+                      numberOfLines={1}>
+                      {chat.lastMessage}
+                    </Text>
+                    {chat.unread > 0 && (
+                      <View className="bg-blue-500 rounded-full min-w-[20px] h-5 items-center justify-center px-1">
+                        <Text className="text-white text-xs font-medium">{chat.unread}</Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
-
-                <View className="flex-row justify-between items-center">
-                  <Text
-                    className={`text-sm flex-1 mr-2 ${chat.unread > 0 ? 'text-gray-900 font-medium' : 'text-gray-600'}`}
-                    numberOfLines={1}>
-                    {chat.lastMessage}
-                  </Text>
-
-                  {chat.unread > 0 && (
-                    <View className="bg-blue-500 rounded-full min-w-[20px] h-5 items-center justify-center px-1">
-                      <Text className="text-white text-xs font-medium">{chat.unread}</Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View className="flex-1 items-center justify-center py-20">
+              <Text className="text-gray-500 text-center">No conversations yet</Text>
+            </View>
+          )}
         </ScrollView>
-
-        {/* Floating Action Button */}
-        <TouchableOpacity className="absolute bottom-6 right-6 w-14 h-14 bg-blue-500 rounded-full items-center justify-center shadow-lg active:bg-blue-600">
-          <Text className="text-white text-2xl">✏️</Text>
-        </TouchableOpacity>
       </View>
     </>
   );

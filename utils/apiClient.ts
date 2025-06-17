@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { config } from './auth';
 import { router } from 'expo-router';
 
-const apiClient: AxiosInstance = axios.create({
+export const apiClient: AxiosInstance = axios.create({
   baseURL: config.API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
