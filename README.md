@@ -8,6 +8,11 @@ Create an emulator
 avdmanager create avd --force --name android-emulator --package 'system-images;android-35;google_apis_playstore_ps16k;x86_64'
 ```
 
+
+``` bash
+npx expo-router-sitemap
+```
+
 ## Get started
 
 1. Install dependencies
@@ -21,6 +26,8 @@ avdmanager create avd --force --name android-emulator --package 'system-images;a
    ```bash
     npx expo start
    ```
+   
+   
 
 ### Search for icons here
 

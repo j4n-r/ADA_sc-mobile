@@ -183,7 +183,7 @@ export default function ChatList() {
               <TouchableOpacity
                 key={chat.id}
                 onPress={() => {
-                  router.push('/chat');
+                  router.push(`/(tabs)/(conversations)/chat?chatId=${chat.id}`);
                 }}
                 className="flex-row items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50">
                 {/* Avatar */}
