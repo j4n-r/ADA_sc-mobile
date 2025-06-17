@@ -48,14 +48,6 @@ export default function Home() {
       />
       <ScrollView className="flex-1 bg-gradient-to-br from-blue-50 to-indigo-100">
         <View className="p-6">
-          {/* Welcome Section */}
-          <View className="mb-8">
-            <Text className="text-3xl font-bold text-gray-900 mb-2">Welcome back!</Text>
-            <Text className="text-lg text-gray-600">
-              {userData.username ? `Hello, ${userData.username}` : 'Good to see you'}
-            </Text>
-          </View>
-
           {/* Profile Card */}
           <View className="bg-white rounded-2xl shadow-xl border border-gray-100 mb-6 overflow-hidden">
             {/* Card Header with Gradient */}
