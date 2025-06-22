@@ -35,6 +35,7 @@ export async function getChatMessages(convId: string) {
 export async function getConversation(convId: string) {
   try {
     const res = await apiClient.get(`/api/conversation/${convId}`);
+    console.debug(res.data);
     return res.data;
   } catch (error) {
     console.error('Error fetching conversation details:', error);

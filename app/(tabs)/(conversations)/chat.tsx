@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import {
   View,
@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { config, getUserdata, UserData } from '~/utils/auth';
-import { getChatMessages } from '~/utils/api';
+import { getChatMessages, getConversation } from '~/utils/api';
 
 const WS_URL = `${config.WS_BASE_URL}`;
 
@@ -32,6 +32,14 @@ interface DisplayMessage {
   timestamp: string;
 }
 
+interface Conversation {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+  created_at: string;
+}
+
 export default function ChatScreen() {
   const { chatId } = useLocalSearchParams<{ chatId: string }>();
   const ws = useRef<WebSocket | null>(null);
@@ -39,6 +47,7 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [chatName, setChatName] = useState<string>('Chat');
+  const [chatDescription, setChatDescription] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,23 +74,48 @@ export default function ChatScreen() {
     fetchUserData();
   }, []);
 
-  // Validate that we have a chat ID and user data
+  // Validate that we have a chat ID and user data, then load conversation details
   useEffect(() => {
-    if (!chatId) {
-      setError('No chat ID provided');
-      setLoading(false);
-      return;
-    }
+    const loadConversationDetails = async () => {
+      if (!chatId) {
+        setError('No chat ID provided');
+        setLoading(false);
+        return;
+      }
 
-    if (!userData.userId) {
-      console.log('Waiting for user data...');
-      return;
-    }
+      if (!userData.userId) {
+        console.log('Waiting for user data...');
+        return;
+      }
 
-    // Here you could fetch chat details from your API
-    // For now, we'll just set a default name
-    setChatName(`Chat ${chatId.slice(0, 8)}`);
-    setLoading(false);
+      try {
+        console.log('Loading conversation details for:', chatId);
+        const response = await getConversation(chatId);
+
+        if (response === 401) {
+          setError('Session expired. Please log in again.');
+          return;
+        }
+
+        if (response && response.messages) {
+          const conversation = response.messages; // Your Flask endpoint returns conversation data in "messages" field
+          setChatName(conversation.name || `Chat ${chatId.slice(0, 8)}`);
+          setChatDescription(conversation.description || '');
+          console.log('Loaded conversation:', conversation.name);
+        } else {
+          // Fallback if conversation details not found
+          setChatName(`Chat ${chatId.slice(0, 8)}`);
+        }
+      } catch (error) {
+        console.error('Failed to load conversation details:', error);
+        // Fallback to default name
+        setChatName(`Chat ${chatId.slice(0, 8)}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadConversationDetails();
   }, [chatId, userData.userId]);
 
   // Load chat messages when chat is ready
