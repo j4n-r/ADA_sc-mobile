@@ -5,6 +5,7 @@ import { apiClient } from './apiClient';
 export async function getConversations(user_id: string) {
   try {
     const res = await apiClient.get(`/api/user/${user_id}/conversations`);
+    console.debug(res.data);
     return res.data;
   } catch (error) {
     console.error('Error fetching protected data:', error);
@@ -20,6 +21,7 @@ export async function getConversations(user_id: string) {
 export async function getChatMessages(convId: string) {
   try {
     const res = await apiClient.get(`/api/conversation/${convId}/messages`);
+    console.debug(res.data);
     return res.data;
   } catch (error) {
     console.error('Error fetching chat messages:', error);
