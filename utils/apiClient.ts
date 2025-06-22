@@ -52,8 +52,8 @@ export async function checkAuth(): Promise<boolean> {
   try {
     // Get token manually for testing
     const token = await SecureStore.getItemAsync('accessToken');
-    if (!token) {
-      console.error('no token found:', token);
+    if (token === null) {
+      console.warn('no token found');
       return false;
     }
 

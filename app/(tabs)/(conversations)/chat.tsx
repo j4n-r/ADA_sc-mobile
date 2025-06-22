@@ -1,20 +1,55 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { GiftedChat, IMessage, User } from 'react-native-gifted-chat';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import { View, Text } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { config, getUserdata, UserData } from '~/utils/auth';
+import { getChatMessages } from '~/utils/api';
 
 const WS_URL = `${config.WS_BASE_URL}`;
+
+interface Message {
+  id: string;
+  content: string;
+  sender_id: string;
+  conversation_id: string;
+  status: string;
+  sent_from_client: string;
+  sent_from_server: string;
+}
+
+interface DisplayMessage {
+  id: string;
+  content: string;
+  senderId: string;
+  username: string;
+  timestamp: string;
+}
 
 export default function ChatScreen() {
   const { chatId } = useLocalSearchParams<{ chatId: string }>();
   const ws = useRef<WebSocket | null>(null);
-  const [messages, setMessages] = useState<IMessage[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [messages, setMessages] = useState<DisplayMessage[]>([]);
+  const [inputText, setInputText] = useState('');
   const [chatName, setChatName] = useState<string>('Chat');
   const [loading, setLoading] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userData, setUserData] = useState<UserData>({ userId: null, username: null });
+
+  // Auto scroll to bottom when new messages arrive
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  }, []);
 
   // Get user data on component mount
   useEffect(() => {
@@ -49,6 +84,55 @@ export default function ChatScreen() {
     setLoading(false);
   }, [chatId, userData.userId]);
 
+  // Load chat messages when chat is ready
+  useEffect(() => {
+    const loadChatMessages = async () => {
+      if (!chatId || !userData.userId) return;
+
+      try {
+        setLoadingMessages(true);
+        console.log('Loading messages for chat:', chatId);
+
+        const response = await getChatMessages(chatId);
+
+        if (response === 401) {
+          setError('Session expired. Please log in again.');
+          return;
+        }
+
+        if (response && response.messages) {
+          // Transform API messages to display format
+          const displayMessages: DisplayMessage[] = response.messages.map((msg: Message) => ({
+            id: msg.id,
+            content: msg.content,
+            senderId: msg.sender_id,
+            username: msg.sender_id === userData.userId ? userData.username || 'You' : 'User', // Will be updated when real-time messages come in with display_name
+            timestamp: msg.sent_from_server || msg.sent_from_client,
+          }));
+
+          // Sort messages by timestamp (oldest first)
+          displayMessages.sort(
+            (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+
+          setMessages(displayMessages);
+          console.log('Loaded', displayMessages.length, 'messages');
+
+          // Scroll to bottom after loading messages
+          setTimeout(() => scrollToBottom(), 100);
+        }
+      } catch (error) {
+        console.error('Failed to load chat messages:', error);
+        setError('Failed to load chat messages');
+      } finally {
+        setLoadingMessages(false);
+      }
+    };
+
+    loadChatMessages();
+  }, [chatId, userData.userId, userData.username, scrollToBottom]);
+
+  // WebSocket connection and message handling
   useEffect(() => {
     if (!chatId || error || !userData.userId) return;
 
@@ -62,7 +146,7 @@ export default function ChatScreen() {
       const initMessage = {
         messageType: 'IdMessage',
         senderId: userData.userId,
-        convId: chatId, // Note: using convId to match the Rust backend
+        convId: chatId,
         timestamp: new Date().toISOString(),
       };
 
@@ -74,35 +158,28 @@ export default function ChatScreen() {
       try {
         const { messageType, payload, meta } = JSON.parse(e.data);
         console.log('RECEIVED:', e.data);
-        console.log('type:', messageType);
-        console.log('payload:', payload);
-        console.log('meta:', meta);
 
         if (messageType === 'ChatMessage') {
-          const iMessage: IMessage = {
-            _id: meta.messageId || Math.random().toString(),
-            text: payload.content,
-            createdAt: new Date(meta.timestamp),
-            user: {
-              _id: meta.senderId,
-              name: payload.displayName || 'Unknown User',
-            },
+          const newMessage: DisplayMessage = {
+            id: meta.messageId || Math.random().toString(),
+            content: payload.content,
+            senderId: meta.senderId,
+            username: payload.displayName, // Use the displayName from the WebSocket payload
+            timestamp: meta.timestamp,
           };
 
-          setMessages((prev) => GiftedChat.append(prev, [iMessage]));
-          console.log('Message appended');
+          setMessages((prev) => [...prev, newMessage]);
+          scrollToBottom();
         } else if (messageType === 'history') {
           // Handle message history if implemented
-          const iMessage: IMessage = {
-            _id: meta.messageId || Math.random().toString(),
-            text: payload.content,
-            createdAt: new Date(meta.timestamp),
-            user: {
-              _id: meta.senderId,
-              name: payload.displayName || 'Unknown User',
-            },
+          const historyMessage: DisplayMessage = {
+            id: meta.messageId || Math.random().toString(),
+            content: payload.content,
+            senderId: meta.senderId,
+            username: payload.displayName, // Use the displayName from the WebSocket payload
+            timestamp: meta.timestamp,
           };
-          setMessages((prev) => GiftedChat.append(prev, [iMessage]));
+          setMessages((prev) => [...prev, historyMessage]);
         }
       } catch (error) {
         console.warn('Invalid message from server', e.data);
@@ -116,13 +193,12 @@ export default function ChatScreen() {
 
     ws.current.onclose = (e) => {
       console.log('WebSocket closed', e);
-      // Optionally implement reconnection logic here
       if (!error) {
         console.log('Attempting to reconnect in 3 seconds...');
         setTimeout(() => {
           if (!ws.current || ws.current.readyState === WebSocket.CLOSED) {
             console.log('Reconnecting...');
-            // Re-run this effect by updating a state variable if needed
+            // Could implement reconnection logic here
           }
         }, 3000);
       }
@@ -135,57 +211,79 @@ export default function ChatScreen() {
         console.log('WebSocket connection closed');
       }
     };
-  }, [chatId, error, userData.userId]);
+  }, [chatId, error, userData.userId, scrollToBottom]);
 
-  const onSend = useCallback(
-    (newMsgs: IMessage[] = []) => {
-      if (!chatId || !userData.userId || !userData.username) {
-        console.warn('Cannot send message: missing chat ID or user data');
-        return;
-      }
+  // Send message function
+  const sendMessage = useCallback(() => {
+    if (!inputText.trim() || !chatId || !userData.userId || !userData.username) {
+      console.warn('Cannot send message: missing required data');
+      return;
+    }
 
-      console.log('New Messages', newMsgs);
-      const msg = newMsgs[0];
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      const messagePayload = {
+        messageType: 'ChatMessage',
+        payload: {
+          content: inputText.trim(),
+          displayName: userData.username,
+        },
+        meta: {
+          messageId: Math.random().toString(),
+          senderId: userData.userId,
+          conversationId: chatId,
+          timestamp: new Date().toISOString(),
+        },
+      };
 
-      // Optimistically add message to UI
-      setMessages((prev) => GiftedChat.append(prev, [{ ...msg, pending: true }]));
+      const msgString = JSON.stringify(messagePayload);
+      ws.current.send(msgString);
+      console.log('SENT:', msgString);
 
-      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-        const messagePayload = {
-          messageType: 'ChatMessage',
-          payload: {
-            content: msg.text,
-            displayName: userData.username,
-          },
-          meta: {
-            messageId: msg._id,
-            senderId: userData.userId,
-            conversationId: chatId,
-            timestamp: new Date().toISOString(),
-          },
-        };
+      setInputText(''); // Clear input after sending
+    } else {
+      console.warn('WebSocket is not open. Message not sent.');
+      setError('Connection lost. Please try again.');
+    }
+  }, [inputText, chatId, userData.userId, userData.username]);
 
-        const msgString = JSON.stringify(messagePayload);
-        ws.current.send(msgString);
-        console.log('SENT:', msgString);
-      } else {
-        console.warn('WebSocket is not open. Message not sent.');
-        setError('Connection lost. Please try again.');
-      }
-    },
-    [chatId, userData.userId, userData.username]
-  );
+  // Format timestamp for display
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
-  const handleTyping = useCallback(() => {
-    setIsTyping(true);
-    // Optionally, send typing events to server here
-    setTimeout(() => setIsTyping(false), 1000);
-  }, []);
+  // Render message bubble
+  const renderMessage = (message: DisplayMessage) => {
+    const isOwnMessage = message.senderId === userData.userId;
 
-  if (loading) {
+    return (
+      <View
+        key={message.id}
+        className={`flex mb-3 px-2 ${isOwnMessage ? 'justify-end items-end' : 'justify-start items-start'}`}>
+        <View
+          className={`max-w-xs px-4 py-2 shadow ${
+            isOwnMessage
+              ? 'bg-blue-500 rounded-t-xl rounded-bl-xl rounded-br-sm'
+              : 'bg-white rounded-t-xl rounded-br-xl rounded-bl-sm border border-gray-200'
+          }`}>
+          <Text
+            className={`font-medium text-xs mb-1 ${
+              isOwnMessage ? 'text-blue-100' : 'text-gray-500'
+            }`}>
+            {message.username}
+          </Text>
+          <Text className={`text-sm ${isOwnMessage ? 'text-white' : 'text-gray-800'}`}>
+            {message.content}
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
+  if (loading || loadingMessages) {
     return (
       <View className="flex-1 items-center justify-center">
-        <Text>Loading chat...</Text>
+        <Text>{loading ? 'Loading chat...' : 'Loading messages...'}</Text>
       </View>
     );
   }
@@ -228,19 +326,37 @@ export default function ChatScreen() {
           headerBackTitle: 'Chats',
         }}
       />
-      <GiftedChat
-        messages={messages}
-        onSend={onSend}
-        onInputTextChanged={handleTyping}
-        user={{
-          _id: userData.userId,
-          name: userData.username || 'You',
-        }}
-        scrollToBottom
-        placeholder="Type a message..."
-        showAvatarForEveryMessage={true}
-        showUserAvatar={true}
-      />
+      <KeyboardAvoidingView
+        className="flex-1 bg-white"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        {/* Chat Messages */}
+        <ScrollView
+          ref={scrollViewRef}
+          className="flex-1 bg-gray-100 p-4"
+          contentContainerStyle={{ paddingBottom: 20 }}>
+          {messages.map(renderMessage)}
+        </ScrollView>
+
+        {/* Message Input */}
+        <View className="bg-gray-100 border-t border-gray-200 p-4">
+          <View className="flex-row gap-3 items-center">
+            <TextInput
+              className="flex-1 px-4 py-3 rounded-full border border-gray-300 bg-white"
+              placeholder="Type a message..."
+              value={inputText}
+              onChangeText={setInputText}
+              onSubmitEditing={sendMessage}
+              returnKeyType="send"
+              multiline={false}
+            />
+            <TouchableOpacity
+              className="px-6 py-3 bg-blue-500 rounded-full active:bg-blue-600"
+              onPress={sendMessage}>
+              <Text className="text-white font-medium">Send</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
     </>
   );
 }
