@@ -25,7 +25,7 @@ export default function RootLayout() {
         // Navigate based on auth result
         if (isAuth) {
           console.log('User authenticated, navigating to tabs');
-          router.replace('/(tabs)');
+          router.replace('/(tabs)/(conversations)');
         } else {
           console.log('User not authenticated, navigating to login');
           router.replace('/login');
