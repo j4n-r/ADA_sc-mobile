@@ -1,32 +1,8 @@
-import { Tabs, router, useFocusEffect } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { Tabs } from 'expo-router';
 import { TabBarIcon } from '../../components/TabBarIcon';
-import { checkAuth } from '../../utils/apiClient';
 
 export default function TabLayout() {
-  useEffect(() => {
-    const verifyAuth = async () => {
-      try {
-        console.log('🔍 Verifying authentication...');
-        const isAuth = await checkAuth();
-
-        console.log('🔍 Auth result:', isAuth);
-
-        if (isAuth) {
-          console.log(' User is authenticated');
-        } else {
-          console.log(' User is not authenticated, redirecting to login');
-          router.replace('/login');
-        }
-      } catch (error) {
-        console.error(' Error verifying auth:', error);
-        router.replace('/login');
-      } finally {
-      }
-    };
-
-    verifyAuth();
-  }, []);
+  // Remove all authentication logic from here - it's now handled in root layout
 
   return (
     <Tabs

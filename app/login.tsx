@@ -2,25 +2,30 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { authUser } from '~/utils/auth';
-import * as SecureStore from 'expo-secure-store';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleLogin = async () => {
     setError('');
+    setLoading(true);
+
     try {
       await authUser({
         email,
         password,
       });
 
-      router.replace('/'); // Or to a specific authenticated route
+      // Force a complete app restart by replacing the entire stack
+      router.replace('/(tabs)');
     } catch (e: any) {
       setError(e.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -41,6 +46,7 @@ export default function Login() {
               autoCapitalize="none"
               keyboardType="email-address"
               placeholderTextColor="#9CA3AF"
+              editable={!loading}
             />
           </View>
 
@@ -53,26 +59,21 @@ export default function Login() {
               onChangeText={setPassword}
               secureTextEntry
               placeholderTextColor="#9CA3AF"
+              editable={!loading}
             />
           </View>
         </View>
 
         <TouchableOpacity
-          className="w-full bg-blue-600 py-4 rounded-lg mt-6 active:bg-blue-700"
-          onPress={handleLogin}>
-          <Text className="text-white text-center font-semibold text-lg">Sign in</Text>
+          className={`w-full py-4 rounded-lg mt-6 ${loading ? 'bg-gray-400' : 'bg-blue-600 active:bg-blue-700'}`}
+          onPress={handleLogin}
+          disabled={loading}>
+          <Text className="text-white text-center font-semibold text-lg">
+            {loading ? 'Signing in...' : 'Sign in'}
+          </Text>
         </TouchableOpacity>
 
         {error ? <Text className="text-red-500 text-center mt-3 text-sm">{error}</Text> : null}
-
-        <View className="border-t border-gray-200 my-6" />
-
-        <View className="flex-row justify-center items-center space-x-2">
-          <Text className="text-gray-600">Don't have an account?</Text>
-          <TouchableOpacity onPress={() => Alert.alert('Sign up!')}>
-            <Text className="text-blue-600 font-semibold">Sign up</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     </View>
   );

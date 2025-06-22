@@ -16,6 +16,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'sc-mobile',
   version: '1.0.0',
   scheme: 'sc-mobile',
+  newArchEnabled: true,
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
