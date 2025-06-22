@@ -8,6 +8,10 @@ Create an emulator
 avdmanager create avd --force --name android-emulator --package 'system-images;android-35;google_apis_playstore_ps16k;x86_64'
 ```
 
+manually start emulatro
+``` bash
+emulator -avd android-emulator -no-snapshot-load
+```
 
 ``` bash
 npx expo-router-sitemap
