@@ -1,4 +1,4 @@
-import { SplashScreen, Stack } from 'expo-router';
+import { SplashScreen, Stack, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { checkAuth } from '../utils/apiClient';
@@ -7,12 +7,12 @@ import '../global.css';
 SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
-  initialRouteName: 'login', // Start with login as default
+  initialRouteName: 'login',
 };
 
 export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const verifyAuth = async () => {
@@ -21,12 +21,20 @@ export default function RootLayout() {
         const isAuth = await checkAuth();
         console.log('🔍 Root auth result:', isAuth);
         setIsAuthenticated(isAuth);
+
+        // Navigate based on auth result
+        if (isAuth) {
+          console.log('User authenticated, navigating to tabs');
+          router.replace('/(tabs)');
+        } else {
+          console.log('User not authenticated, navigating to login');
+          router.replace('/login');
+        }
       } catch (error) {
         console.error('🔍 Error verifying auth at root:', error);
         setIsAuthenticated(false);
+        router.replace('/login');
       } finally {
-        setIsLoading(false);
-        // Hide splash screen once auth check is complete
         SplashScreen.hideAsync();
       }
     };
@@ -34,24 +42,26 @@ export default function RootLayout() {
     verifyAuth();
   }, []);
 
-  // Show loading screen while checking authentication
-  if (isLoading) {
+  // Show loading while checking auth
+  if (isAuthenticated === null) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Loading...</Text>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#f8fafc',
+        }}>
+        <Text style={{ fontSize: 16, color: '#6b7280' }}>Checking authentication...</Text>
       </View>
     );
   }
 
+  // Define all screens - don't conditionally render them
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      {isAuthenticated ? (
-        // User is authenticated - show main app
-        <Stack.Screen name="(tabs)" />
-      ) : (
-        // User is not authenticated - show login
-        <Stack.Screen name="login" />
-      )}
+      <Stack.Screen name="login" />
+      <Stack.Screen name="(tabs)" />
     </Stack>
   );
 }
