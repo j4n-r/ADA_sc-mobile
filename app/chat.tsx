@@ -32,6 +32,14 @@ interface DisplayMessage {
   timestamp: string;
 }
 
+interface Conversation {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+  created_at: string;
+}
+
 export default function ChatScreen() {
   const { chatId } = useLocalSearchParams<{ chatId: string }>();
   const ws = useRef<WebSocket | null>(null);
@@ -271,6 +279,12 @@ export default function ChatScreen() {
       setError('Connection lost. Please try again.');
     }
   }, [inputText, chatId, userData.userId, userData.username]);
+
+  // Format timestamp for display
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   // Render message bubble
   const renderMessage = (message: DisplayMessage) => {

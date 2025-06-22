@@ -42,13 +42,11 @@ export default function RootLayout() {
     );
   }
 
-  // Always render the Stack, but conditionally set the initial route
   return (
-    <Stack
-      screenOptions={{ headerShown: false }}
-      initialRouteName={isAuthenticated ? '(tabs)' : 'login'}>
+    <Stack initialRouteName={isAuthenticated ? '(tabs)' : 'login'}>
       <Stack.Screen name="login" />
-      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="chat" />
     </Stack>
   );
 }

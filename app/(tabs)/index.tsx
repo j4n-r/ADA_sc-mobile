@@ -195,7 +195,7 @@ export default function ChatList() {
               <TouchableOpacity
                 key={chat.id}
                 onPress={() => {
-                  router.push(`/(tabs)/(conversations)/chat?chatId=${chat.id}`);
+                  router.push(`/chat?chatId=${chat.id}`);
                 }}
                 className="bg-white rounded-2xl p-4 mb-3 shadow-sm border border-gray-100 active:bg-gray-50">
                 <View className="flex-row items-center">

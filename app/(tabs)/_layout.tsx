@@ -30,7 +30,7 @@ export default function TabLayout() {
         },
       }}>
       <Tabs.Screen
-        name="(conversations)"
+        name="index"
         options={{
           title: 'Chats',
           headerShown: false,

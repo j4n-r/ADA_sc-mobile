@@ -4,6 +4,7 @@ import { Stack, router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUserdata, UserData } from '~/utils/auth';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 export default function Home() {
   const [userData, setUserData] = useState<UserData>({ userId: null, username: null });
@@ -46,19 +47,19 @@ export default function Home() {
           headerShadowVisible: false,
         }}
       />
-      <ScrollView className="flex-1 bg-gradient-to-br from-blue-50 to-indigo-100">
-        <View className="p-6">
+      <ScrollView className="flex-1">
+        <View className="p-6 pt-14">
           {/* Profile Card */}
           <View className="bg-white rounded-2xl shadow-xl border border-gray-100 mb-6 overflow-hidden">
             {/* Card Header with Gradient */}
             <View className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6">
               <View className="flex-row items-center">
                 <View className="w-12 h-12 bg-white/20 rounded-full items-center justify-center mr-4">
-                  <Text className="text-white font-bold text-lg">👤</Text>
+                  <AntDesign name="user" size={24} color="black" />
                 </View>
                 <View>
-                  <Text className="text-white text-xl font-bold">User Profile</Text>
-                  <Text className="text-blue-100 text-sm">Account Information</Text>
+                  <Text className="text-gray text-xl font-bold">User Profile</Text>
+                  <Text className="text-gray-400 text-md">Account Information</Text>
                 </View>
               </View>
             </View>
