@@ -57,6 +57,9 @@ export default function ChatScreen() {
   const [error, setError] = useState<string | null>(null);
   const [userData, setUserData] = useState<UserData>({ userId: null, username: null });
 
+  // Track message IDs that come from WebSocket to prevent duplicates
+  const [realtimeMessageIds, setRealtimeMessageIds] = useState<Set<string>>(new Set());
+
   // Add Drizzle DB support
   const db = useSQLiteContext();
   const drizzleDb = drizzle(db, { schema });
@@ -181,7 +184,6 @@ export default function ChatScreen() {
         let response = null;
         try {
           response = await getChatMessages(chatId);
-          // Try to load from local DB as fallback
 
           if (response === 401) {
             setError('Session expired. Please log in again.');
@@ -189,6 +191,7 @@ export default function ChatScreen() {
           }
         } catch (err) {
           console.error('Failed to fetch messages');
+          // Try to load from local DB as fallback
           try {
             const localMessages = await drizzleDb
               .select()
@@ -233,29 +236,42 @@ export default function ChatScreen() {
           setMessages(displayMessages);
           console.log('Loaded', displayMessages.length, 'messages');
 
-          // Save messages to local DB
+          // Save messages to local DB - FILTER OUT REAL-TIME MESSAGES
           try {
             if (response.messages.length > 0) {
-              await drizzleDb
-                .insert(schema.messages)
-                .values(
-                  response.messages.map((msg: Message) => ({
-                    id: msg.id,
-                    sender_id: msg.sender_id,
-                    conversation_id: msg.conversation_id,
-                    content: msg.content,
-                    sent_from_client: msg.sent_from_client || new Date().toISOString(),
-                    sent_from_server: msg.sent_from_server || new Date().toISOString(),
-                  }))
-                )
-                .onConflictDoUpdate({
-                  target: [schema.messages.id],
-                  set: {
-                    content: sql`excluded.content`,
-                    sent_from_server: sql`excluded.sent_from_server`,
-                  },
-                });
-              console.log('Saved messages to local DB');
+              // Filter out messages that were already saved via WebSocket
+              const messagesToSave = response.messages.filter(
+                (msg: Message) => !realtimeMessageIds.has(msg.id)
+              );
+
+              console.log(
+                `Filtered ${response.messages.length - messagesToSave.length} real-time messages, saving ${messagesToSave.length} messages`
+              );
+
+              if (messagesToSave.length > 0) {
+                await drizzleDb
+                  .insert(schema.messages)
+                  .values(
+                    messagesToSave.map((msg: Message) => ({
+                      id: msg.id,
+                      sender_id: msg.sender_id,
+                      conversation_id: msg.conversation_id,
+                      content: msg.content,
+                      sent_from_client: msg.sent_from_client || new Date().toISOString(),
+                      sent_from_server: msg.sent_from_server || new Date().toISOString(),
+                    }))
+                  )
+                  .onConflictDoUpdate({
+                    target: [schema.messages.id],
+                    set: {
+                      content: sql`excluded.content`,
+                      sent_from_server: sql`excluded.sent_from_server`,
+                    },
+                  });
+                console.log('Saved', messagesToSave.length, 'new messages to local DB');
+              } else {
+                console.log('No new messages to save (all were real-time)');
+              }
             }
           } catch (dbError) {
             console.error('Failed to save messages to local DB:', dbError);
@@ -271,7 +287,7 @@ export default function ChatScreen() {
     };
 
     loadChatMessages();
-  }, [chatId, userData.userIdl]);
+  }, [chatId, userData.userId, realtimeMessageIds]);
 
   // WebSocket connection and message handling
   useEffect(() => {
@@ -301,8 +317,18 @@ export default function ChatScreen() {
         console.log('RECEIVED:', e.data);
 
         if (messageType === 'ChatMessage') {
+          const messageId = meta.messageId || Math.random().toString();
+
+          // Track this message as coming from WebSocket to prevent duplicates
+          setRealtimeMessageIds((prev) => {
+            const newSet = new Set(prev);
+            newSet.add(messageId);
+            console.log('Added message ID to realtime tracking:', messageId);
+            return newSet;
+          });
+
           const newMessage: DisplayMessage = {
-            id: meta.messageId || Math.random().toString(),
+            id: messageId,
             content: payload.content,
             senderId: meta.senderId,
             username: payload.displayName,
@@ -311,28 +337,19 @@ export default function ChatScreen() {
 
           setMessages((prev) => [...prev, newMessage]);
           scrollToBottom();
-
-          // Save new message to local DB
-          try {
-            await drizzleDb
-              .insert(schema.messages)
-              .values({
-                id: newMessage.id,
-                sender_id: meta.senderId,
-                conversation_id: chatId,
-                content: payload.content,
-                sent_from_client: meta.timestamp,
-                sent_from_server: new Date().toISOString(),
-              })
-              .onConflictDoNothing();
-            console.log('Saved WebSocket message to local DB');
-          } catch (dbError) {
-            console.error('Failed to save WebSocket message to local DB:', dbError);
-          }
         } else if (messageType === 'history') {
           // Handle message history if implemented
+          const messageId = meta.messageId || Math.random().toString();
+
+          // Track history messages as well
+          setRealtimeMessageIds((prev) => {
+            const newSet = new Set(prev);
+            newSet.add(messageId);
+            return newSet;
+          });
+
           const historyMessage: DisplayMessage = {
-            id: meta.messageId || Math.random().toString(),
+            id: messageId,
             content: payload.content,
             senderId: meta.senderId,
             username: payload.displayName,
@@ -370,7 +387,7 @@ export default function ChatScreen() {
         console.log('WebSocket connection closed');
       }
     };
-  }, [chatId, error, userData.userId, scrollToBottom, drizzleDb]);
+  }, [chatId, error, userData.userId, scrollToBottom]);
 
   // Send message function
   const sendMessage = useCallback(async () => {
@@ -382,6 +399,14 @@ export default function ChatScreen() {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       const messageId = Math.random().toString();
       const timestamp = new Date().toISOString();
+
+      // Track our own sent message to prevent duplicates
+      setRealtimeMessageIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.add(messageId);
+        console.log('Added sent message ID to realtime tracking:', messageId);
+        return newSet;
+      });
 
       const messagePayload = {
         messageType: 'ChatMessage',
@@ -400,31 +425,12 @@ export default function ChatScreen() {
       const msgString = JSON.stringify(messagePayload);
       ws.current.send(msgString);
       console.log('SENT:', msgString);
-
-      // Save sent message to local DB immediately
-      try {
-        await drizzleDb
-          .insert(schema.messages)
-          .values({
-            id: messageId,
-            sender_id: userData.userId,
-            conversation_id: chatId,
-            content: inputText.trim(),
-            sent_from_client: timestamp,
-            sent_from_server: timestamp,
-          })
-          .onConflictDoNothing();
-        console.log('Saved sent message to local DB');
-      } catch (dbError) {
-        console.error('Failed to save sent message to local DB:', dbError);
-      }
-
       setInputText(''); // Clear input after sending
     } else {
       console.warn('WebSocket is not open. Message not sent.');
       setError('Connection lost. Please try again.');
     }
-  }, [inputText, chatId, userData.userId, userData.username, drizzleDb]);
+  }, [inputText, chatId, userData.userId, userData.username]);
 
   // Format timestamp for display
   const formatTime = (timestamp: string) => {

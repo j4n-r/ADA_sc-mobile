@@ -98,7 +98,6 @@ export default function ChatList() {
     } catch (err) {
       console.error('API call failed, loading from local DB:', err);
 
-      // 🔁 Fallback: load from local Drizzle DB
       const localConversations = await drizzleDb
         .select()
         .from(schema.conversations)
