@@ -1,23 +1,13 @@
 import { Stack } from 'expo-router';
+import { sql } from 'drizzle-orm';
+import { useSQLiteContext } from 'expo-sqlite';
+import { drizzle } from 'drizzle-orm/expo-sqlite';
+import * as schema from '~/db/schema';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useState, useEffect, useCallback } from 'react';
 import { getUserdata } from '~/utils/auth';
-import { getConversations } from '~/utils/api';
-
-// Type for conversation data from API (updated to match your schema)
-type Conversation = {
-  conversation_id: string;
-  created_at: string;
-  description: string | null;
-  id: string;
-  joined_at: string;
-  name: string;
-  owner_id: string | null;
-  role: string;
-  updated_at: string;
-  user_id: string;
-};
+import { getConversations, Conversation, ConversationsResponse } from '~/utils/api';
 
 // Type for transformed chat data for display
 type ChatItem = {
@@ -34,6 +24,8 @@ export default function ChatList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const db = useSQLiteContext();
+  const drizzleDb = drizzle(db, { schema });
 
   const transformConversationToChat = (conversation: Conversation): ChatItem => {
     const formatTimestamp = (dateString: string) => {
@@ -77,10 +69,44 @@ export default function ChatList() {
         const transformedChats = response.conversations.map(transformConversationToChat);
         setChats(transformedChats);
         setError(null); // Clear any previous errors
+        try {
+          await drizzleDb
+            .insert(schema.conversations)
+            .values(
+              response.conversations.map((conv) => ({
+                id: conv.conversation_id,
+                owner_id: conv.owner_id,
+                name: conv.name,
+                description: conv.description,
+                created_at: conv.created_at,
+                updated_at: conv.updated_at,
+              }))
+            )
+            .onConflictDoUpdate({
+              target: [schema.conversations.id],
+              set: {
+                owner_id: sql`excluded.owner_id`,
+                name: sql`excluded.name`,
+                description: sql`excluded.description`,
+                updated_at: sql`excluded.updated_at`,
+              },
+            });
+        } catch (err) {
+          console.error('Failed to insert into local database');
+        }
       }
     } catch (err) {
-      setError('Failed to load conversations');
-      console.error('Error fetching conversations:', err);
+      console.error('API call failed, loading from local DB:', err);
+
+      // 🔁 Fallback: load from local Drizzle DB
+      const localConversations = await drizzleDb
+        .select()
+        .from(schema.conversations)
+        .orderBy(schema.conversations.updated_at);
+
+      console.log('Local Conversations: ', localConversations);
+      const transformedChats = localConversations.map(transformConversationToChat);
+      setChats(transformedChats);
     } finally {
       setLoading(false);
     }
@@ -184,7 +210,7 @@ export default function ChatList() {
         <View className="bg-white px-6 py-4 border-b border-gray-100 shadow-sm">
           <Text className="text-3xl font-bold text-gray-900">Conversations</Text>
           <Text className="text-gray-500 mt-1">
-            {chats.length} conversation{chats.length !== 1 ? 's' : ''}
+            {chats.length} conversation {chats.length !== 1 ? 's' : ''}
           </Text>
         </View>
 
