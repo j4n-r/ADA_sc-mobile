@@ -210,7 +210,7 @@ export default function ChatList() {
         <View className="bg-white px-6 py-4 border-b border-gray-100 shadow-sm">
           <Text className="text-3xl font-bold text-gray-900">Conversations</Text>
           <Text className="text-gray-500 mt-1">
-            {chats.length} conversation {chats.length !== 1 ? 's' : ''}
+            {chats.length} conversation{chats.length !== 1 ? 's' : ''}
           </Text>
         </View>
 

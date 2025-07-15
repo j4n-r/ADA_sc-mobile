@@ -11,6 +11,10 @@ import {
 } from 'react-native';
 import { config, getUserdata, UserData } from '~/utils/auth';
 import { getChatMessages, getConversation } from '~/utils/api';
+import { useSQLiteContext } from 'expo-sqlite';
+import { drizzle } from 'drizzle-orm/expo-sqlite';
+import * as schema from '~/db/schema';
+import { sql } from 'drizzle-orm';
 
 const WS_URL = `${config.WS_BASE_URL}`;
 
@@ -52,6 +56,10 @@ export default function ChatScreen() {
   const [loadingMessages, setLoadingMessages] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userData, setUserData] = useState<UserData>({ userId: null, username: null });
+
+  // Add Drizzle DB support
+  const db = useSQLiteContext();
+  const drizzleDb = drizzle(db, { schema });
 
   // Auto scroll to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {
@@ -102,21 +110,64 @@ export default function ChatScreen() {
           setChatName(conversation.name || `Chat ${chatId.slice(0, 8)}`);
           setChatDescription(conversation.description || '');
           console.log('Loaded conversation:', conversation.name);
+
+          // Save conversation to local DB
+          try {
+            await drizzleDb
+              .insert(schema.conversations)
+              .values({
+                id: chatId,
+                owner_id: conversation.owner_id || userData.userId,
+                name: conversation.name || `Chat ${chatId.slice(0, 8)}`,
+                description: conversation.description,
+                created_at: conversation.created_at || new Date().toISOString(),
+                updated_at: conversation.updated_at || new Date().toISOString(),
+              })
+              .onConflictDoUpdate({
+                target: [schema.conversations.id],
+                set: {
+                  name: sql`excluded.name`,
+                  description: sql`excluded.description`,
+                  updated_at: sql`excluded.updated_at`,
+                },
+              });
+            console.log('Saved conversation to local DB');
+          } catch (dbError) {
+            console.error('Failed to save conversation to local DB:', dbError);
+          }
         } else {
           // Fallback if conversation details not found
           setChatName(`Chat ${chatId.slice(0, 8)}`);
         }
       } catch (error) {
         console.error('Failed to load conversation details:', error);
-        // Fallback to default name
-        setChatName(`Chat ${chatId.slice(0, 8)}`);
+
+        // Try to load from local DB as fallback
+        try {
+          const localConversation = await drizzleDb
+            .select()
+            .from(schema.conversations)
+            .where(sql`${schema.conversations.id} = ${chatId}`)
+            .limit(1);
+
+          if (localConversation && localConversation.length > 0) {
+            setChatName(localConversation[0].name || `Chat ${chatId.slice(0, 8)}`);
+            setChatDescription(localConversation[0].description || '');
+            console.log('Loaded conversation from local DB');
+          } else {
+            setChatName(`Chat ${chatId.slice(0, 8)}`);
+          }
+        } catch (localError) {
+          console.error('Failed to load from local DB:', localError);
+          setChatName(`Chat ${chatId.slice(0, 8)}`);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadConversationDetails();
-  }, [chatId, userData.userId]);
+  }, [chatId, userData.userId, drizzleDb]);
 
   // Load chat messages when chat is ready
   useEffect(() => {
@@ -127,11 +178,41 @@ export default function ChatScreen() {
         setLoadingMessages(true);
         console.log('Loading messages for chat:', chatId);
 
-        const response = await getChatMessages(chatId);
+        let response = null;
+        try {
+          response = await getChatMessages(chatId);
+          // Try to load from local DB as fallback
 
-        if (response === 401) {
-          setError('Session expired. Please log in again.');
-          return;
+          if (response === 401) {
+            setError('Session expired. Please log in again.');
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to fetch messages');
+          try {
+            const localMessages = await drizzleDb
+              .select()
+              .from(schema.messages)
+              .where(sql`${schema.messages.conversation_id} = ${chatId}`)
+              .orderBy(schema.messages.sent_from_client);
+
+            if (localMessages && localMessages.length > 0) {
+              const displayMessages: DisplayMessage[] = localMessages.map((msg) => ({
+                id: msg.id,
+                content: msg.content,
+                senderId: msg.sender_id,
+                username: msg.sender_id === userData.userId ? userData.username || 'You' : 'User',
+                timestamp: msg.sent_from_server || msg.sent_from_client,
+              }));
+
+              setMessages(displayMessages);
+              console.log('Loaded', displayMessages.length, 'messages from local DB');
+              setTimeout(() => scrollToBottom(), 100);
+            }
+          } catch (localError) {
+            console.error('Failed to load messages from local DB:', localError);
+            setError('Failed to load chat messages');
+          }
         }
 
         if (response && response.messages) {
@@ -140,7 +221,7 @@ export default function ChatScreen() {
             id: msg.id,
             content: msg.content,
             senderId: msg.sender_id,
-            username: msg.sender_id === userData.userId ? userData.username || 'You' : 'User', // Will be updated when real-time messages come in with display_name
+            username: msg.sender_id === userData.userId ? userData.username || 'You' : 'User',
             timestamp: msg.sent_from_server || msg.sent_from_client,
           }));
 
@@ -152,19 +233,45 @@ export default function ChatScreen() {
           setMessages(displayMessages);
           console.log('Loaded', displayMessages.length, 'messages');
 
-          // Scroll to bottom after loading messages
-          setTimeout(() => scrollToBottom(), 100);
+          // Save messages to local DB
+          try {
+            if (response.messages.length > 0) {
+              await drizzleDb
+                .insert(schema.messages)
+                .values(
+                  response.messages.map((msg: Message) => ({
+                    id: msg.id,
+                    sender_id: msg.sender_id,
+                    conversation_id: msg.conversation_id,
+                    content: msg.content,
+                    sent_from_client: msg.sent_from_client || new Date().toISOString(),
+                    sent_from_server: msg.sent_from_server || new Date().toISOString(),
+                  }))
+                )
+                .onConflictDoUpdate({
+                  target: [schema.messages.id],
+                  set: {
+                    content: sql`excluded.content`,
+                    sent_from_server: sql`excluded.sent_from_server`,
+                  },
+                });
+              console.log('Saved messages to local DB');
+            }
+          } catch (dbError) {
+            console.error('Failed to save messages to local DB:', dbError);
+          }
+
+          scrollToBottom();
         }
       } catch (error) {
         console.error('Failed to load chat messages:', error);
-        setError('Failed to load chat messages');
       } finally {
         setLoadingMessages(false);
       }
     };
 
     loadChatMessages();
-  }, [chatId, userData.userId, userData.username, scrollToBottom]);
+  }, [chatId, userData.userIdl]);
 
   // WebSocket connection and message handling
   useEffect(() => {
@@ -188,7 +295,7 @@ export default function ChatScreen() {
       ws.current?.send(JSON.stringify(initMessage));
     };
 
-    ws.current.onmessage = (e) => {
+    ws.current.onmessage = async (e) => {
       try {
         const { messageType, payload, meta } = JSON.parse(e.data);
         console.log('RECEIVED:', e.data);
@@ -198,19 +305,37 @@ export default function ChatScreen() {
             id: meta.messageId || Math.random().toString(),
             content: payload.content,
             senderId: meta.senderId,
-            username: payload.displayName, // Use the displayName from the WebSocket payload
+            username: payload.displayName,
             timestamp: meta.timestamp,
           };
 
           setMessages((prev) => [...prev, newMessage]);
           scrollToBottom();
+
+          // Save new message to local DB
+          try {
+            await drizzleDb
+              .insert(schema.messages)
+              .values({
+                id: newMessage.id,
+                sender_id: meta.senderId,
+                conversation_id: chatId,
+                content: payload.content,
+                sent_from_client: meta.timestamp,
+                sent_from_server: new Date().toISOString(),
+              })
+              .onConflictDoNothing();
+            console.log('Saved WebSocket message to local DB');
+          } catch (dbError) {
+            console.error('Failed to save WebSocket message to local DB:', dbError);
+          }
         } else if (messageType === 'history') {
           // Handle message history if implemented
           const historyMessage: DisplayMessage = {
             id: meta.messageId || Math.random().toString(),
             content: payload.content,
             senderId: meta.senderId,
-            username: payload.displayName, // Use the displayName from the WebSocket payload
+            username: payload.displayName,
             timestamp: meta.timestamp,
           };
           setMessages((prev) => [...prev, historyMessage]);
@@ -245,16 +370,19 @@ export default function ChatScreen() {
         console.log('WebSocket connection closed');
       }
     };
-  }, [chatId, error, userData.userId, scrollToBottom]);
+  }, [chatId, error, userData.userId, scrollToBottom, drizzleDb]);
 
   // Send message function
-  const sendMessage = useCallback(() => {
+  const sendMessage = useCallback(async () => {
     if (!inputText.trim() || !chatId || !userData.userId || !userData.username) {
       console.warn('Cannot send message: missing required data');
       return;
     }
 
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      const messageId = Math.random().toString();
+      const timestamp = new Date().toISOString();
+
       const messagePayload = {
         messageType: 'ChatMessage',
         payload: {
@@ -262,10 +390,10 @@ export default function ChatScreen() {
           displayName: userData.username,
         },
         meta: {
-          messageId: Math.random().toString(),
+          messageId: messageId,
           senderId: userData.userId,
           conversationId: chatId,
-          timestamp: new Date().toISOString(),
+          timestamp: timestamp,
         },
       };
 
@@ -273,12 +401,30 @@ export default function ChatScreen() {
       ws.current.send(msgString);
       console.log('SENT:', msgString);
 
+      // Save sent message to local DB immediately
+      try {
+        await drizzleDb
+          .insert(schema.messages)
+          .values({
+            id: messageId,
+            sender_id: userData.userId,
+            conversation_id: chatId,
+            content: inputText.trim(),
+            sent_from_client: timestamp,
+            sent_from_server: timestamp,
+          })
+          .onConflictDoNothing();
+        console.log('Saved sent message to local DB');
+      } catch (dbError) {
+        console.error('Failed to save sent message to local DB:', dbError);
+      }
+
       setInputText(''); // Clear input after sending
     } else {
       console.warn('WebSocket is not open. Message not sent.');
       setError('Connection lost. Please try again.');
     }
-  }, [inputText, chatId, userData.userId, userData.username]);
+  }, [inputText, chatId, userData.userId, userData.username, drizzleDb]);
 
   // Format timestamp for display
   const formatTime = (timestamp: string) => {
@@ -319,17 +465,6 @@ export default function ChatScreen() {
       <View className="flex-1 items-center justify-center">
         <Text>{loading ? 'Loading chat...' : 'Loading messages...'}</Text>
       </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <>
-        <Stack.Screen options={{ title: 'Error' }} />
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-red-500 text-center">{error}</Text>
-        </View>
-      </>
     );
   }
 
