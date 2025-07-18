@@ -55,6 +55,7 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [apiConnectionFailed, setApiConnectionFailed] = useState(false);
   const [userData, setUserData] = useState<UserData>({ userId: null, username: null });
 
   // Track message IDs that come from WebSocket to prevent duplicates
@@ -105,6 +106,7 @@ export default function ChatScreen() {
 
         if (response === 401) {
           setError('Session expired. Please log in again.');
+          setApiConnectionFailed(true);
           return;
         }
 
@@ -144,6 +146,7 @@ export default function ChatScreen() {
         }
       } catch (error) {
         console.error('Failed to load conversation details:', error);
+        setApiConnectionFailed(true);
 
         // Try to load from local DB as fallback
         try {
@@ -187,10 +190,12 @@ export default function ChatScreen() {
 
           if (response === 401) {
             setError('Session expired. Please log in again.');
+            setApiConnectionFailed(true);
             return;
           }
         } catch (err) {
           console.error('Failed to fetch messages');
+          setApiConnectionFailed(true);
           // Try to load from local DB as fallback
           try {
             const localMessages = await drizzleDb
@@ -391,8 +396,8 @@ export default function ChatScreen() {
 
   // Send message function
   const sendMessage = useCallback(async () => {
-    if (!inputText.trim() || !chatId || !userData.userId || !userData.username) {
-      console.warn('Cannot send message: missing required data');
+    if (!inputText.trim() || !chatId || !userData.userId || !userData.username || loadingMessages) {
+      console.warn('Cannot send message: missing required data or messages still loading');
       return;
     }
 
@@ -430,7 +435,7 @@ export default function ChatScreen() {
       console.warn('WebSocket is not open. Message not sent.');
       setError('Connection lost. Please try again.');
     }
-  }, [inputText, chatId, userData.userId, userData.username]);
+  }, [inputText, chatId, userData.userId, userData.username, loadingMessages]);
 
   // Format timestamp for display
   const formatTime = (timestamp: string) => {
@@ -512,25 +517,37 @@ export default function ChatScreen() {
           {messages.map(renderMessage)}
         </ScrollView>
 
-        {/* Message Input */}
-        <View className="bg-gray-100 border-t border-gray-200 p-4">
-          <View className="flex-row gap-3 items-center">
-            <TextInput
-              className="flex-1 px-4 py-3 rounded-full border border-gray-300 bg-white"
-              placeholder="Type a message..."
-              value={inputText}
-              onChangeText={setInputText}
-              onSubmitEditing={sendMessage}
-              returnKeyType="send"
-              multiline={false}
-            />
-            <TouchableOpacity
-              className="px-6 py-3 bg-blue-500 rounded-full active:bg-blue-600"
-              onPress={sendMessage}>
-              <Text className="text-white font-medium">Send</Text>
-            </TouchableOpacity>
+        {/* Message Input or No Connection Message */}
+        {apiConnectionFailed ? (
+          <View className="bg-red-50 border-t border-red-200 p-4">
+            <View className="flex-row items-center justify-center">
+              <Text className="text-red-600 font-medium">
+                No connection - Unable to send messages
+              </Text>
+            </View>
           </View>
-        </View>
+        ) : (
+          <View className="bg-gray-100 border-t border-gray-200 p-4">
+            <View className="flex-row gap-3 items-center">
+              <TextInput
+                className={`flex-1 px-4 py-3 rounded-full border ${loadingMessages ? 'border-gray-200 bg-gray-100' : 'border-gray-300 bg-white'}`}
+                placeholder={loadingMessages ? 'Loading messages...' : 'Type a message...'}
+                value={inputText}
+                onChangeText={setInputText}
+                onSubmitEditing={sendMessage}
+                returnKeyType="send"
+                multiline={false}
+                editable={!loadingMessages}
+              />
+              <TouchableOpacity
+                className={`px-6 py-3 rounded-full ${loadingMessages ? 'bg-gray-400' : 'bg-blue-500 active:bg-blue-600'}`}
+                onPress={sendMessage}
+                disabled={loadingMessages}>
+                <Text className="text-white font-medium">Send</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </>
   );

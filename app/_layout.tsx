@@ -1,4 +1,4 @@
-import { SplashScreen, Stack } from 'expo-router';
+import { SplashScreen, Stack, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { checkAuth } from '../utils/apiClient';
@@ -18,6 +18,7 @@ export default function RootLayout() {
   const expoDb = openDatabaseSync(DATABASE_NAME);
   const db = drizzle(expoDb);
   const { success, error } = useMigrations(db, migrations);
+  const router = useRouter();
 
   // --- HOOKS MUST BE CALLED BEFORE CONDITIONAL RETURNS ---
   useEffect(() => {
@@ -26,10 +27,12 @@ export default function RootLayout() {
         console.log('  Verifying authentication at root level...');
         const isAuth = await checkAuth();
         console.log('  Root auth result:', isAuth);
+
         setIsAuthenticated(isAuth);
       } catch (error) {
         console.error('  Error verifying auth at root:', error);
         setIsAuthenticated(false);
+        router.replace('/login');
       } finally {
         SplashScreen.hideAsync();
       }
