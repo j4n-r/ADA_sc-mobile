@@ -19,6 +19,8 @@
     "axios": "^1.9.0",
     "babel-plugin-inline-import": "^3.0.0",
     "drizzle-orm": "^0.44.3",
+    "eas": "^0.1.0",
+    "eas-cli": "^16.16.0",
     "expo": "^52.0.46",
     "expo-constants": "~17.0.8",
     "expo-drizzle-studio-plugin": "^0.1.0",

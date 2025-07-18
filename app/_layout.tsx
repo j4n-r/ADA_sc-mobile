@@ -22,9 +22,6 @@ export default function RootLayout() {
   // --- HOOKS MUST BE CALLED BEFORE CONDITIONAL RETURNS ---
   useEffect(() => {
     const verifyAuth = async () => {
-      // Don't run auth check until migrations are complete
-      if (!success) return;
-
       try {
         console.log('  Verifying authentication at root level...');
         const isAuth = await checkAuth();

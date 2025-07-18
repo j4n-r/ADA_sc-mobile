@@ -13,6 +13,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   // === All settings from your app.json go here ===
   name: 'sc-mobile',
+  owner: 'j4n-r',
   slug: 'sc-mobile',
   version: '1.0.0',
   scheme: 'sc-mobile',
@@ -53,5 +54,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     // This makes your customConfig available in the app
     ...customConfig,
+    eas: {
+      projectId: 'd546bf38-9bd7-4714-b315-c5c1b780bad0',
+    },
   },
 });

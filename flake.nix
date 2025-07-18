@@ -1,24 +1,30 @@
 {
   inputs = {
     nixpkgs.url = "github:cachix/devenv-nixpkgs/rolling";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     devenv.url = "github:cachix/devenv";
   };
-
   nixConfig = {
     extra-trusted-public-keys = "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=";
     extra-substituters = "https://devenv.cachix.org";
   };
-
   outputs =
     {
       self,
       nixpkgs,
+      nixpkgs-unstable,
       devenv,
       ...
     }@inputs:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
+        inherit system;
+        config = {
+          allowUnfree = true;
+        };
+      };
+      pkgs-unstable = import nixpkgs-unstable {
         inherit system;
         config = {
           allowUnfree = true;
@@ -39,12 +45,11 @@
               packages = [
                 pkgs.watchman
                 pkgs.gradle
+                pkgs-unstable.eas-cli
               ];
-
               android = {
                 enable = true;
                 reactNative.enable = true;
-
                 # --- Customization for React Native/Expo ---
                 platforms.version = [
                   "34"

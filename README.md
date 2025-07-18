@@ -17,6 +17,17 @@ emulator -avd android-emulator -no-snapshot-load
 npx expo-router-sitemap
 ```
 
+Compile apk locally
+``` bash
+eas build -p android --profile preview
+```
+
+Install on android emulator
+``` bash
+eas build:run -p android
+```
+
+
 ## Get started
 
 1. Install dependencies

@@ -43,7 +43,8 @@ export default function Login() {
               placeholder="you@email.com"
               value={email}
               onChangeText={setEmail}
-              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
               keyboardType="email-address"
               placeholderTextColor="#9CA3AF"
               editable={!loading}
@@ -58,6 +59,7 @@ export default function Login() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              autoCapitalize="none"
               placeholderTextColor="#9CA3AF"
               editable={!loading}
             />
