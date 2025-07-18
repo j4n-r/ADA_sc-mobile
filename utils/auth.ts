@@ -81,7 +81,7 @@ export async function authUser({ email, password }: User): Promise<AuthResponse>
         `Request failed with status ${e.response.status}`;
     } else if (axios.isAxiosError(e) && e.request) {
       console.error('Auth Error Request:', e.request);
-      errorMessage = 'No response from server. Is the server running and accessible?';
+      errorMessage = 'Something went wrong.';
     } else {
       console.error('Auth Error Message:', e.message);
       errorMessage = e.message;

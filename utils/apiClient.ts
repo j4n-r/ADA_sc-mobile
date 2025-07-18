@@ -10,6 +10,9 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
+console.log('API_BASE_URL:', config.API_BASE_URL);
+console.log('WS_BASE_URL', config.API_BASE_URL);
+
 // Fixed interceptor to properly add JWT to requests
 apiClient.interceptors.request.use(
   async (axiosConfig: InternalAxiosRequestConfig) => {
