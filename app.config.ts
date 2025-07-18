@@ -1,11 +1,5 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
-// Your custom config for API URLs
-export const customConfig = {
-  API_BASE_URL: 'http://10.0.2.2:5000',
-  WS_BASE_URL: 'ws://10.0.2.2:8080',
-};
-
 // The main Expo config function
 export default ({ config }: ConfigContext): ExpoConfig => ({
   // This is the base config, don't remove it.
@@ -52,8 +46,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
 
   extra: {
-    // This makes your customConfig available in the app
-    ...customConfig,
     eas: {
       projectId: 'd546bf38-9bd7-4714-b315-c5c1b780bad0',
     },

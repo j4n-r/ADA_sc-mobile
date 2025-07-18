@@ -27,6 +27,11 @@ Install on android emulator
 eas build:run -p android
 ```
 
+Uninstall on android emulator
+```bash
+ adb uninstall com.anonymous.scmobile
+```
+
 
 ## Get started
 

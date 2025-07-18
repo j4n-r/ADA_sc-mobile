@@ -9,14 +9,14 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { config, getUserdata, UserData } from '~/utils/auth';
+import { getUserdata, UserData } from '~/utils/auth';
 import { getChatMessages, getConversation } from '~/utils/api';
 import { useSQLiteContext } from 'expo-sqlite';
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import * as schema from '~/db/schema';
 import { sql } from 'drizzle-orm';
 
-const WS_URL = `${config.WS_BASE_URL}`;
+const WS_URL = process.env.EXPO_PUBLIC_WS_BASE_URL || 'ws://10.0.2.2:8080';
 
 interface Message {
   id: string;

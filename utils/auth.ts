@@ -1,21 +1,14 @@
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
-import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Get configuration from Expo Constants
-const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
-const WS_BASE_URL = Constants.expoConfig?.extra?.WS_BASE_URL;
+// Get configuration from environment variables with fallbacks
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://10.0.2.2:5000';
+const WS_BASE_URL = process.env.EXPO_PUBLIC_WS_BASE_URL || 'ws://10.0.2.2:8080';
 
-// Validate configuration
-if (!API_BASE_URL) {
-  throw new Error('API_BASE_URL not found in app configuration');
-}
-
-if (!WS_BASE_URL) {
-  throw new Error('WS_BASE_URL not found in app configuration');
-}
+console.log('API_BASE_URL:', API_BASE_URL);
+console.log('WS_BASE_URL:', WS_BASE_URL);
 
 // Export configuration for use in other files
 export const config = {

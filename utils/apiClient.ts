@@ -1,17 +1,20 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { config } from './auth';
 import { router } from 'expo-router';
 
+// Get configuration from environment variables with fallbacks
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://10.0.2.2:5000';
+const WS_BASE_URL = process.env.EXPO_PUBLIC_WS_BASE_URL || 'ws://10.0.2.2:8080';
+
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: config.API_BASE_URL,
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-console.log('API_BASE_URL:', config.API_BASE_URL);
-console.log('WS_BASE_URL', config.API_BASE_URL);
+console.log('API_BASE_URL:', API_BASE_URL);
+console.log('WS_BASE_URL:', WS_BASE_URL);
 
 // Fixed interceptor to properly add JWT to requests
 apiClient.interceptors.request.use(
@@ -60,7 +63,7 @@ export async function checkAuth(): Promise<boolean> {
       return false;
     }
 
-    const res = await apiClient.get(`${config.API_BASE_URL}/auth/check`, {
+    const res = await apiClient.get(`${API_BASE_URL}/auth/check`, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
