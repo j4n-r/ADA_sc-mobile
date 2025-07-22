@@ -471,14 +471,6 @@ export default function ChatScreen() {
     );
   };
 
-  if (loading || loadingMessages) {
-    return (
-      <View className="flex-1 items-center justify-center">
-        <Text>{loading ? 'Loading chat...' : 'Loading messages...'}</Text>
-      </View>
-    );
-  }
-
   if (!chatId) {
     return (
       <>
