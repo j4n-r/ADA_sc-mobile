@@ -104,7 +104,7 @@ emulator -avd android-emulator -no-snapshot-load
 
 ```bash
 adb uninstall com.anonymous.scmobile
-kk1```
+```
 
 ## Project Structure
 
