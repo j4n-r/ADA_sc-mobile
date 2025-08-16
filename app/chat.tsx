@@ -79,7 +79,6 @@ export default function ChatScreen() {
         const data = await getUserdata();
         setUserData(data);
       } catch (error) {
-        console.error('Failed to fetch user data for Chat screen:', error);
         setError('Failed to load user data');
       }
     };
@@ -137,15 +136,12 @@ export default function ChatScreen() {
                 },
               });
             console.log('Saved conversation to local DB');
-          } catch (dbError) {
-            console.error('Failed to save conversation to local DB:', dbError);
-          }
+          } catch (dbError) {}
         } else {
           // Fallback if conversation details not found
           setChatName(`Chat ${chatId.slice(0, 8)}`);
         }
       } catch (error) {
-        console.error('Failed to load conversation details:', error);
         setApiConnectionFailed(true);
 
         // Try to load from local DB as fallback
@@ -164,7 +160,6 @@ export default function ChatScreen() {
             setChatName(`Chat ${chatId.slice(0, 8)}`);
           }
         } catch (localError) {
-          console.error('Failed to load from local DB:', localError);
           setChatName(`Chat ${chatId.slice(0, 8)}`);
         }
       } finally {
@@ -194,7 +189,6 @@ export default function ChatScreen() {
             return;
           }
         } catch (err) {
-          console.error('Failed to fetch messages');
           setApiConnectionFailed(true);
           // Try to load from local DB as fallback
           try {
@@ -218,7 +212,6 @@ export default function ChatScreen() {
               setTimeout(() => scrollToBottom(), 100);
             }
           } catch (localError) {
-            console.error('Failed to load messages from local DB:', localError);
             setError('Failed to load chat messages');
           }
         }
@@ -278,14 +271,11 @@ export default function ChatScreen() {
                 console.log('No new messages to save (all were real-time)');
               }
             }
-          } catch (dbError) {
-            console.error('Failed to save messages to local DB:', dbError);
-          }
+          } catch (dbError) {}
 
           scrollToBottom();
         }
       } catch (error) {
-        console.error('Failed to load chat messages:', error);
       } finally {
         setLoadingMessages(false);
       }

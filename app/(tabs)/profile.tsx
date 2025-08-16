@@ -7,7 +7,6 @@ import { getUserdata, UserData } from '~/utils/auth';
 import { useSQLiteContext } from 'expo-sqlite';
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import * as schema from '~/db/schema';
-import { sql } from 'drizzle-orm';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
 export default function Home() {
