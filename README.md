@@ -26,6 +26,28 @@ A React Native chat application built with Expo, featuring real-time messaging, 
 - **Authentication**: Access Token through sc-admin backend
 - **Development**: TypeScript, ESLint, Prettier
 
+### Language overview
+
+```fish
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Language              Files        Lines         Code     Comments       Blanks
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ CSS                       1            3            3            0            0
+ JavaScript                5           43           36            2            5
+ Nix                       1          100           99            1            0
+ SQL                       1           44           40            4            0
+ TSX                      10         1316         1139           51          126
+ TypeScript               10          756          642           38           76
+─────────────────────────────────────────────────────────────────────────────────
+ Markdown                  1          142            0          101           41
+ |- BASH                   1           22           14            6            2
+ (Total)                              164           14          107           43
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Total                    29         2426         1973          203          250
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+```
+
 ## Prerequisites
 
 - Node.js (v18 or higher)
