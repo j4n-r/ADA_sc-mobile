@@ -24,7 +24,7 @@ A React Native chat application built with Expo, featuring real-time messaging, 
 - **Styling**: NativeWind (TailwindCSS for React Native)
 - **Real-time**: WebSocket connections
 - **State Management**: React Query for server state
-- **Authentication**: Supabase integration
+- **Authentication**: Access Token through sc-admin backend
 - **Development**: TypeScript, ESLint, Prettier
 
 ## Prerequisites
@@ -128,7 +128,6 @@ db/                    # Database layer
 utils/                 # Utility functions
 ├── api.ts             # API client functions
 ├── auth.ts            # Authentication utilities
-└── supabase.ts        # Supabase configuration
 
 assets/                # Static assets (images, icons)
 ```
