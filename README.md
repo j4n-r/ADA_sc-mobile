@@ -1,11 +1,10 @@
 # SC Mobile
+A React Native chat application built with Expo, featuring real-time messaging, offline support, and cross-platform compatibility.
 
 ## Team Members:
 | Name | Matriculation Number |
 |------|---------------------|
 | Jan Rueggeberg | 77212019358 |
-
-A React Native chat application built with Expo, featuring real-time messaging, offline support, and cross-platform compatibility.
 
 ## Features
 
